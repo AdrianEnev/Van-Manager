@@ -8,11 +8,16 @@ import { Vehicle } from '../models/Vehicle';
 export async function registerAssignmentRoutes(app: FastifyInstance) {
   // Admin: attach vehicle to user (activate or create)
   app.post('/api/assignments', async (req: FastifyRequest, reply: FastifyReply) => {
-    const { userId, vehicleId } = (z
-      .object({ userId: z.string().min(1), vehicleId: z.string().min(1) })
-      .parse(req.body)) as { userId: string; vehicleId: string };
-
     await requireAdmin(app, req, reply);
+
+    const bodySchema = z.object({ userId: z.string().min(1), vehicleId: z.string().min(1) });
+    const parsed = bodySchema.safeParse(req.body);
+    if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
+    const { userId, vehicleId } = parsed.data as { userId: string; vehicleId: string };
+
+    if (!mongoose.isValidObjectId(userId) || !mongoose.isValidObjectId(vehicleId)) {
+      return reply.code(400).send({ error: 'Invalid userId or vehicleId' });
+    }
 
     // ensure vehicle exists
     const v = await Vehicle.findById(vehicleId).lean();

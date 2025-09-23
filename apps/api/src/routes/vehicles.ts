@@ -34,7 +34,17 @@ export async function registerVehicleRoutes(app: FastifyInstance) {
     if (status) filter.status = status;
     if (search) filter.plateNumber = { $regex: search, $options: 'i' };
     const list = await Vehicle.find(filter).sort({ createdAt: -1 }).lean();
-    return reply.send(list);
+    const mapped = (list || []).map((v: any) => ({
+      id: v._id?.toString?.(),
+      plateNumber: v.plateNumber,
+      makeModel: v.makeModel,
+      motExpiry: v.motExpiry,
+      status: v.status,
+      notes: v.notes,
+      createdAt: v.createdAt,
+      updatedAt: v.updatedAt,
+    }));
+    return reply.send(mapped);
   });
 
   // Admin: get one
@@ -43,7 +53,17 @@ export async function registerVehicleRoutes(app: FastifyInstance) {
     const { id } = (req.params as any);
     const v = await Vehicle.findById(id).lean();
     if (!v) return reply.code(404).send({ error: 'Not found' });
-    return reply.send(v);
+    const mapped = {
+      id: (v as any)._id?.toString?.(),
+      plateNumber: (v as any).plateNumber,
+      makeModel: (v as any).makeModel,
+      motExpiry: (v as any).motExpiry,
+      status: (v as any).status,
+      notes: (v as any).notes,
+      createdAt: (v as any).createdAt,
+      updatedAt: (v as any).updatedAt,
+    };
+    return reply.send(mapped);
   });
 
   // Admin: update
@@ -60,7 +80,17 @@ export async function registerVehicleRoutes(app: FastifyInstance) {
     if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
     const v = await Vehicle.findByIdAndUpdate(id, { $set: parsed.data }, { new: true }).lean();
     if (!v) return reply.code(404).send({ error: 'Not found' });
-    return reply.send(v);
+    const mapped = {
+      id: (v as any)._id?.toString?.(),
+      plateNumber: (v as any).plateNumber,
+      makeModel: (v as any).makeModel,
+      motExpiry: (v as any).motExpiry,
+      status: (v as any).status,
+      notes: (v as any).notes,
+      createdAt: (v as any).createdAt,
+      updatedAt: (v as any).updatedAt,
+    };
+    return reply.send(mapped);
   });
 
   // Admin: delete (soft by status)

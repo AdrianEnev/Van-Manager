@@ -25,6 +25,21 @@ export default function Header() {
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
         <nav className="flex items-center gap-4">
           <Link href="/" className="font-semibold">Van Manager</Link>
+          {authed && user && (
+            <>
+                {user.role === 'user' && (
+                    <>
+                        <Link href="/dashboard" className="text-sm text-gray-700 hover:text-black">Dashboard</Link>
+                        <Link href="/vehicles" className="text-sm text-gray-700 hover:text-black">Vehicles</Link>
+                        <Link href="/finance" className="text-sm text-gray-700 hover:text-black">Finance</Link>
+                        <Link href="/penalties" className="text-sm text-gray-700 hover:text-black">Penalties</Link>
+                    </>
+                )}
+                {user.role === 'admin' && (
+                    <Link href="/admin" className="text-sm text-gray-700 hover:text-black">Admin Panel</Link>
+                )}
+            </>
+          )}
         </nav>
         <div className="flex items-center gap-3">
           {authed && user ? (

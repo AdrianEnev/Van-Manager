@@ -2,8 +2,17 @@
 
 import Link from 'next/link';
 import { Button } from '../components/ui/button';
+import { useAuth } from 'components/auth-provider';
+import { redirect } from 'next/navigation';
 
 export default function Home() {
+
+    const {authed} = useAuth();
+    
+    if (authed) {
+        return redirect('/dashboard');
+    }
+    
   return (
     <div className="text-center space-y-4">
       <h1 className="text-4xl font-bold">Van Manager</h1>

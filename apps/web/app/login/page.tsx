@@ -90,43 +90,43 @@ export default function LoginPage() {
 
   return (
     <div className="w-full max-w-md rounded-lg border bg-white p-6 shadow-sm">
-        <h1 className="text-2xl font-semibold">Sign in</h1>
-        <p className="mt-1 text-sm text-gray-600">Use your account to continue.</p>
-        <div className="mt-4">
-          <div id="google-button" className="flex justify-center" />
-          {gLoading && <p className="mt-2 text-sm text-gray-600">Signing in with Google…</p>}
-        </div>
-        <form onSubmit={onSubmit} className="mt-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium">Email</label>
-            <input
-              type="email"
-              className="mt-1 w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium">Password</label>
-            <input
-              type="password"
-              className="mt-1 w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-            <div className="mt-2 text-right">
-              <a href="/forgot-password" className="text-sm text-gray-700 underline">Forgot password?</a>
+            <h1 className="text-2xl font-semibold">Sign in</h1>
+            <p className="mt-1 text-sm text-gray-600">Use your account to continue.</p>
+            <div className="mt-4">
+            <div id="google-button" className="flex justify-center" />
+            {gLoading && <p className="mt-2 text-sm text-gray-600">Signing in with Google…</p>}
             </div>
-          </div>
-          {error && <p className="text-sm text-red-600">{error}</p>}
-          <Button disabled={loading} className="w-full">{loading ? 'Signing in…' : 'Sign in'}</Button>
-        </form>
-        <p className="mt-4 text-sm text-gray-600">
-          Don't have an account?{' '}
-          <a href="/register" className="text-black underline">Register</a>
-        </p>
+            <form onSubmit={onSubmit} className="mt-6 space-y-4">
+            <div>
+                <label className="block text-sm font-medium">Email</label>
+                <input
+                type="email"
+                className="mt-1 w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                />
+            </div>
+            <div>
+                <label className="block text-sm font-medium">Password</label>
+                <input
+                type="password"
+                className="mt-1 w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                />
+                <div className="mt-2 text-right">
+                <a href="/forgot-password" className="text-sm text-gray-700 underline">Forgot password?</a>
+                </div>
+            </div>
+            {error && <p className="text-sm text-red-600">{error}</p>}
+            <Button disabled={loading} className="w-full">{loading ? 'Signing in…' : 'Sign in'}</Button>
+            </form>
+            <p className="mt-4 text-sm text-gray-600">
+            Don't have an account?{' '}
+            <a href="/register" className="text-black underline">Register</a>
+            </p>
     </div>
   );
 }
