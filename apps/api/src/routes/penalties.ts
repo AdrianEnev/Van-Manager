@@ -52,7 +52,18 @@ export async function registerPenaltyRoutes(app: FastifyInstance) {
     if (from || to) filter.dueDate = { ...(from ? { $gte: from } : {}), ...(to ? { $lte: to } : {}) };
 
     const list = await Penalty.find(filter).sort({ createdAt: -1 }).lean();
-    return reply.send(list);
+    const mapped = (list || []).map((p: any) => ({
+      id: p._id?.toString?.(),
+      userId: p.userId?.toString?.(),
+      vehicleId: p.vehicleId ? p.vehicleId.toString() : undefined,
+      amount: p.amount,
+      reason: p.reason,
+      dueDate: p.dueDate,
+      status: p.status,
+      createdAt: p.createdAt,
+      updatedAt: p.updatedAt,
+    }));
+    return reply.send(mapped);
   });
 
   // Admin: update status (e.g., paid or waived)
@@ -64,7 +75,18 @@ export async function registerPenaltyRoutes(app: FastifyInstance) {
     if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
     const doc = await Penalty.findByIdAndUpdate(id, { $set: { status: parsed.data.status } }, { new: true }).lean();
     if (!doc) return reply.code(404).send({ error: 'Not found' });
-    return reply.send(doc);
+    const mapped = {
+      id: (doc as any)._id?.toString?.(),
+      userId: (doc as any).userId?.toString?.(),
+      vehicleId: (doc as any).vehicleId ? (doc as any).vehicleId.toString() : undefined,
+      amount: (doc as any).amount,
+      reason: (doc as any).reason,
+      dueDate: (doc as any).dueDate,
+      status: (doc as any).status,
+      createdAt: (doc as any).createdAt,
+      updatedAt: (doc as any).updatedAt,
+    };
+    return reply.send(mapped);
   });
 
   // User: my penalties (active)
@@ -73,6 +95,17 @@ export async function registerPenaltyRoutes(app: FastifyInstance) {
     const list = await Penalty.find({ userId: new mongoose.Types.ObjectId(ctx.userId), status: { $in: ['pending', 'paid'] } })
       .sort({ createdAt: -1 })
       .lean();
-    return reply.send(list);
+    const mapped = (list || []).map((p: any) => ({
+      id: p._id?.toString?.(),
+      userId: p.userId?.toString?.(),
+      vehicleId: p.vehicleId ? p.vehicleId.toString() : undefined,
+      amount: p.amount,
+      reason: p.reason,
+      dueDate: p.dueDate,
+      status: p.status,
+      createdAt: p.createdAt,
+      updatedAt: p.updatedAt,
+    }));
+    return reply.send(mapped);
   });
 }
