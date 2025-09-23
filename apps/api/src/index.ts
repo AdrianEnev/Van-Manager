@@ -15,6 +15,7 @@ import { registerPaymentRoutes } from './routes/payments';
 import { registerPenaltyRoutes } from './routes/penalties';
 import { registerAdminUserRoutes } from './routes/admin-users';
 import { startSchedulers } from './services/scheduler';
+import { registerPlanRoutes } from './routes/plans';
 
 dotenv.config();
 
@@ -50,6 +51,7 @@ async function bootstrap() {
   await registerPaymentRoutes(app);
   await registerPenaltyRoutes(app);
   await registerAdminUserRoutes(app);
+  await registerPlanRoutes(app);
 
   // Background jobs (overdue processing, notifications)
   startSchedulers(app);

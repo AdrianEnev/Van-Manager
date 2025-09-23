@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../../../components/auth-provider';
-import { adminCreateCharge, adminListCharges, adminListUsers, adminListUserVehicles, adminMarkChargePaid, type AdminUser, type Charge, type VehicleAssignment } from '../../../lib/api';
+import { adminCreatePlan, adminListCharges, adminListUsers, adminListUserVehicles, adminListPlans, adminMarkChargePaid, type AdminUser, type Charge, type VehicleAssignment, type Plan } from '../../../lib/api';
 
 export default function AdminChargesPage() {
   const { user, authed, loading } = useAuth();
@@ -11,6 +11,9 @@ export default function AdminChargesPage() {
   const [assignments, setAssignments] = useState<VehicleAssignment[]>([]);
   const [charges, setCharges] = useState<Charge[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [frequency, setFrequency] = useState<'weekly' | 'monthly' | 'custom_days'>('weekly');
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [success, setSuccess] = useState<string | null>(null);
 
   const isAdmin = useMemo(() => authed && user?.role === 'admin', [authed, user]);
 
@@ -23,13 +26,17 @@ export default function AdminChargesPage() {
     const list = await adminListUserVehicles(uid);
     setAssignments(list);
   }
+  async function refreshPlans(uid?: string) {
+    const list = await adminListPlans(uid ? { userId: uid } : {});
+    setPlans(list);
+  }
   async function refreshCharges(uid?: string) {
     const list = await adminListCharges(uid ? { userId: uid } : {});
     setCharges(list);
   }
 
   useEffect(() => { if (isAdmin) { refreshUsers().catch(()=>{}); } }, [isAdmin]);
-  useEffect(() => { if (isAdmin && selectedUser) { refreshAssignments(selectedUser).catch(()=>{}); refreshCharges(selectedUser).catch(()=>{}); } }, [isAdmin, selectedUser]);
+  useEffect(() => { if (isAdmin && selectedUser) { refreshAssignments(selectedUser).catch(()=>{}); refreshCharges(selectedUser).catch(()=>{}); refreshPlans(selectedUser).catch(()=>{}); } }, [isAdmin, selectedUser]);
 
   async function onCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -38,13 +45,17 @@ export default function AdminChargesPage() {
     const vehicleAssignmentId = String(fd.get('vehicleAssignmentId') || '');
     const vehicleId = vehicleAssignmentId ? assignments.find(a => a.assignmentId === vehicleAssignmentId)?.vehicle.id : undefined;
     const amount = Number(fd.get('amount'));
-    const type = String(fd.get('type')) as Charge['type'];
-    const dueDate = String(fd.get('dueDate'));
-    if (!userId || !amount || !type || !dueDate) return;
+    const frequency = String(fd.get('frequency')) as 'weekly' | 'monthly' | 'custom_days';
+    const startingDate = String(fd.get('startingDate'));
+    const intervalDaysRaw = String(fd.get('intervalDays') || '');
+    const intervalDays = frequency === 'custom_days' && intervalDaysRaw ? Number(intervalDaysRaw) : undefined;
+    if (!userId || !amount || !frequency || !startingDate) return;
     try {
-      await adminCreateCharge({ userId, vehicleId, amount, type, dueDate });
+      await adminCreatePlan({ userId, vehicleId, amount, frequency, startingDate, ...(intervalDays ? { intervalDays } : {}) });
       (e.target as HTMLFormElement).reset();
-      await refreshCharges(userId);
+      setFrequency('weekly');
+      setSuccess('Recurring plan created. It will materialize charges on and after the starting date.');
+      await Promise.all([refreshPlans(userId), refreshCharges(userId)]);
     } catch (err: any) {
       setError(err?.message || 'Create charge failed');
     }
@@ -63,8 +74,9 @@ export default function AdminChargesPage() {
     <div className="w-full space-y-6">
       <h1 className="text-2xl font-semibold">Admin · Charges</h1>
       {error && <div className="text-sm text-red-600">{error}</div>}
+      {success && <div className="text-sm text-green-700">{success}</div>}
 
-      <form onSubmit={onCreate} className="rounded border bg-white p-4 grid gap-3 md:grid-cols-5">
+      <form onSubmit={onCreate} className="rounded border bg-white p-4 grid gap-3 md:grid-cols-6">
         <div>
           <label className="block text-sm font-medium">User</label>
           <select name="userId" className="mt-1 w-full rounded border px-2 py-1" value={selectedUser} onChange={(e)=>setSelectedUser(e.target.value)}>
@@ -83,21 +95,48 @@ export default function AdminChargesPage() {
           <input name="amount" type="number" step="0.01" className="mt-1 w-full rounded border px-2 py-1" required />
         </div>
         <div>
-          <label className="block text-sm font-medium">Type</label>
-          <select name="type" className="mt-1 w-full rounded border px-2 py-1">
-            <option value="weekly_fee">Weekly fee</option>
-            <option value="mot">MOT</option>
-            <option value="other">Other</option>
+          <label className="block text-sm font-medium">Frequency</label>
+          <select
+            name="frequency"
+            className="mt-1 w-full rounded border px-2 py-1"
+            value={frequency}
+            onChange={(e) => setFrequency(e.target.value as any)}
+          >
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+            <option value="custom_days">Custom (days)</option>
           </select>
         </div>
+        {frequency === 'custom_days' && (
+          <div>
+            <label className="block text-sm font-medium">Interval days (custom only)</label>
+            <input name="intervalDays" type="number" min={1} className="mt-1 w-full rounded border px-2 py-1" placeholder="e.g., 13" required />
+          </div>
+        )}
         <div>
-          <label className="block text-sm font-medium">Due date</label>
-          <input name="dueDate" type="date" className="mt-1 w-full rounded border px-2 py-1" required />
+          <label className="block text-sm font-medium">Starting date</label>
+          <input name="startingDate" type="date" className="mt-1 w-full rounded border px-2 py-1" required />
         </div>
-        <div className="md:col-span-5">
-          <button className="rounded bg-black px-3 py-2 text-white">Create Charge</button>
+        <div className="md:col-span-6">
+          <button className="rounded bg-black px-3 py-2 text-white">Create Recurring Plan</button>
         </div>
       </form>
+
+      <section>
+        <h2 className="text-lg font-medium mb-2">Recurring Plans for selected user</h2>
+        <div className="grid gap-3">
+          {plans.length ? plans.map((p) => (
+            <div key={p.id} className="rounded border bg-white p-4 flex items-center justify-between">
+              <div>
+                <div className="font-medium">£{p.amount.toFixed(2)} — {p.frequency === 'custom_days' ? `every ${p.intervalDays} days` : p.frequency}</div>
+                <div className="text-sm text-gray-600">Starting: {new Date(p.startingDate).toLocaleDateString()}</div>
+                <div className="text-sm text-gray-600">Next due: {new Date(p.nextDueDate).toLocaleDateString()}</div>
+              </div>
+              <span className={`text-xs px-2 py-1 rounded ${p.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>{p.active ? 'active' : 'inactive'}</span>
+            </div>
+          )) : <div className="text-sm text-gray-600">No plans for this user.</div>}
+        </div>
+      </section>
 
       <section>
         <h2 className="text-lg font-medium mb-2">Charges</h2>

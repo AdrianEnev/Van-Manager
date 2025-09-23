@@ -1,6 +1,6 @@
 import mongoose, { Schema, model, Model, Types } from 'mongoose';
 
-export type ChargeType = 'weekly_fee' | 'mot' | 'other';
+export type ChargeType = 'weekly_fee' | 'monthly_fee' | 'mot' | 'other';
 export type ChargeStatus = 'pending' | 'paid' | 'overdue' | 'canceled';
 
 export interface ICharge {
@@ -13,7 +13,7 @@ export interface ICharge {
   dueDate: Date;
   status: ChargeStatus;
   createdBy?: Types.ObjectId; // admin user id
-  metadata?: Record<string, any>;
+  metadata?: Record<string, any>; // may include planId when generated from a Plan
   createdAt: Date;
   updatedAt: Date;
 }

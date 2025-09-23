@@ -291,3 +291,42 @@ export async function adminListPenalties(filters: Partial<{ userId: string; vehi
 export async function adminUpdatePenaltyStatus(id: string, status: Penalty['status']): Promise<Penalty> {
   return apiFetchAuto<Penalty>(`/api/penalties/${id}/status`, { method: 'POST', body: JSON.stringify({ status }) });
 }
+
+// Plans (recurring charges)
+export type Plan = {
+  id: string;
+  userId: string;
+  vehicleId?: string;
+  amount: number;
+  currency: string;
+  frequency: 'weekly' | 'monthly' | 'custom_days';
+  intervalDays?: number;
+  startingDate: string;
+  nextDueDate: string;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export async function adminCreatePlan(payload: {
+  userId: string;
+  vehicleId?: string;
+  amount: number;
+  currency?: string;
+  frequency: 'weekly' | 'monthly' | 'custom_days';
+  intervalDays?: number;
+  startingDate: string;
+}): Promise<Plan> {
+  return apiFetchAuto<Plan>(`/api/plans`, { method: 'POST', body: JSON.stringify(payload) });
+}
+
+export async function adminListPlans(filters?: Partial<{ userId: string; vehicleId: string; active: boolean }>): Promise<Plan[]> {
+  const p = new URLSearchParams();
+  if (filters) Object.entries(filters).forEach(([k, v]) => { if (v !== undefined && v !== null) p.set(k, String(v)); });
+  const qs = p.toString();
+  return apiFetchAuto<Plan[]>(`/api/plans${qs ? `?${qs}` : ''}`);
+}
+
+export async function adminUpdatePlan(id: string, payload: Partial<{ amount: number; currency: string; active: boolean }>): Promise<Plan> {
+  return apiFetchAuto<Plan>(`/api/plans/${id}`, { method: 'PATCH', body: JSON.stringify(payload) });
+}

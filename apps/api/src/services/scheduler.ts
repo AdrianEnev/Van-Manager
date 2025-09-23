@@ -4,8 +4,28 @@ import { Charge } from '../models/Charge';
 import { Notification } from '../models/Notification';
 import { sendEmailNotification } from './notifications';
 import { loadApiEnv } from '@services/config/src/env';
+import { Plan } from '../models/Plan';
 
 function msFromHours(h: number) { return h * 60 * 60 * 1000; }
+
+function addInterval(date: Date, frequency: 'weekly' | 'monthly' | 'custom_days', intervalDays?: number): Date {
+  const d = new Date(date);
+  if (frequency === 'weekly') {
+    d.setDate(d.getDate() + 7);
+  } else if (frequency === 'monthly') {
+    // advance by one calendar month, keeping day where possible
+    const day = d.getDate();
+    d.setMonth(d.getMonth() + 1);
+    // handle edge cases like Jan 31 -> Feb
+    if (d.getDate() < day) {
+      d.setDate(0); // go to last day of previous month
+    }
+  } else {
+    const inc = Math.max(1, intervalDays || 1);
+    d.setDate(d.getDate() + inc);
+  }
+  return d;
+}
 
 async function processOverdueCharges(app: FastifyInstance) {
   const now = new Date();
@@ -49,6 +69,35 @@ async function processOverdueCharges(app: FastifyInstance) {
     }
   }
   return { processed: pending.length, notified };
+}
+
+async function tickPlans(app: FastifyInstance) {
+  try {
+    const now = new Date();
+    const batch = await Plan.find({ active: true, nextDueDate: { $lte: now } }).limit(100).lean();
+    if (!batch.length) return;
+    for (const p of batch) {
+      try {
+        await (await import('../models/Charge')).Charge.create({
+          userId: p.userId,
+          vehicleId: p.vehicleId,
+          amount: (p as any).amount,
+          currency: (p as any).currency || 'GBP',
+          type: (p as any).frequency === 'weekly' ? 'weekly_fee' : (p as any).frequency === 'monthly' ? 'monthly_fee' : 'other',
+          dueDate: p.nextDueDate,
+          status: 'pending',
+          metadata: { planId: (p as any)._id?.toString?.() },
+        });
+
+        const next = addInterval(new Date(p.nextDueDate), (p as any).frequency, (p as any).intervalDays);
+        await Plan.updateOne({ _id: (p as any)._id }, { $set: { nextDueDate: next } });
+      } catch (e) {
+        // log and continue
+      }
+    }
+  } catch (e) {
+    // log and continue
+  }
 }
 
 async function processDueSoonReminders(app: FastifyInstance) {
@@ -129,7 +178,9 @@ export function startSchedulers(app: FastifyInstance) {
   setTimeout(() => {
     tickOverdue();
     tickReminders();
+    tickPlans(app);
     setInterval(tickOverdue, overdueIntervalMs).unref();
     setInterval(tickReminders, overdueIntervalMs).unref();
+    setInterval(() => tickPlans(app), overdueIntervalMs).unref();
   }, 5_000).unref?.();
 }
