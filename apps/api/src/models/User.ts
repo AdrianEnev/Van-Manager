@@ -8,6 +8,7 @@ export interface IUser {
   email: string;
   name: string;
   role: UserRole;
+  isTransactionAllowed?: boolean;
   passwordHash?: string;
   googleId?: string;
   avatar?: string;
@@ -25,6 +26,7 @@ const UserSchema = new Schema<IUser>(
     email: { type: String, unique: true, required: true, index: true, lowercase: true },
     name: { type: String, required: true },
     role: { type: String, enum: ['admin', 'user'], default: 'user', index: true },
+    isTransactionAllowed: { type: Boolean, default: false, index: true },
     passwordHash: {
       type: String,
       required: function (this: any) {
