@@ -55,7 +55,19 @@ export async function registerPaymentRoutes(app: FastifyInstance) {
     if (from || to) filter.createdAt = { ...(from ? { $gte: from } : {}), ...(to ? { $lte: to } : {}) };
 
     const list = await Payment.find(filter).sort({ createdAt: -1 }).lean();
-    return reply.send(list);
+    const mapped = (list || []).map((p: any) => ({
+      id: p._id?.toString?.(),
+      userId: p.userId?.toString?.(),
+      amount: p.amount,
+      currency: p.currency,
+      method: p.method,
+      relatedChargeId: p.relatedChargeId ? p.relatedChargeId.toString() : undefined,
+      externalRef: p.externalRef,
+      note: p.note,
+      createdAt: p.createdAt,
+      updatedAt: p.updatedAt,
+    }));
+    return reply.send(mapped);
   });
 
   // User: my payments with limited window
@@ -69,7 +81,19 @@ export async function registerPaymentRoutes(app: FastifyInstance) {
     const list = await Payment.find({ userId: new mongoose.Types.ObjectId(ctx.userId), createdAt: { $gte: from } })
       .sort({ createdAt: -1 })
       .lean();
-    return reply.send(list);
+    const mapped = (list || []).map((p: any) => ({
+      id: p._id?.toString?.(),
+      userId: p.userId?.toString?.(),
+      amount: p.amount,
+      currency: p.currency,
+      method: p.method,
+      relatedChargeId: p.relatedChargeId ? p.relatedChargeId.toString() : undefined,
+      externalRef: p.externalRef,
+      note: p.note,
+      createdAt: p.createdAt,
+      updatedAt: p.updatedAt,
+    }));
+    return reply.send(mapped);
   });
 
   // User: initiate online checkout (placeholder to be implemented with Stripe)

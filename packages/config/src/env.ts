@@ -25,6 +25,7 @@ const apiEnvSchema = z.object({
   ENABLE_SCHEDULER: z.coerce.boolean().default(true).optional(),
   OVERDUE_CRON_INTERVAL_MS: z.coerce.number().default(900000).optional(), // 15 minutes
   NOTIFY_THROTTLE_HOURS: z.coerce.number().default(24).optional(),
+  NOTIFY_REMINDER_LEAD_HOURS: z.coerce.number().default(48).optional(),
 });
 
 export type ApiEnv = z.infer<typeof apiEnvSchema>;

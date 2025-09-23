@@ -56,7 +56,19 @@ export async function registerChargeRoutes(app: FastifyInstance) {
     if (type) filter.type = type;
     if (from || to) filter.dueDate = { ...(from ? { $gte: from } : {}), ...(to ? { $lte: to } : {}) };
     const list = await Charge.find(filter).sort({ dueDate: -1 }).lean();
-    return reply.send(list);
+    const mapped = (list || []).map((c: any) => ({
+      id: c._id?.toString?.(),
+      userId: c.userId?.toString?.(),
+      vehicleId: c.vehicleId ? c.vehicleId.toString() : undefined,
+      amount: c.amount,
+      currency: c.currency,
+      type: c.type,
+      dueDate: c.dueDate,
+      status: c.status,
+      createdAt: c.createdAt,
+      updatedAt: c.updatedAt,
+    }));
+    return reply.send(mapped);
   });
 
   // Admin: mark charge as paid (manual)
@@ -96,6 +108,18 @@ export async function registerChargeRoutes(app: FastifyInstance) {
     const list = await Charge.find({ userId: new mongoose.Types.ObjectId(ctx.userId), dueDate: { $gte: from } })
       .sort({ dueDate: -1 })
       .lean();
-    return reply.send(list);
+    const mapped = (list || []).map((c: any) => ({
+      id: c._id?.toString?.(),
+      userId: c.userId?.toString?.(),
+      vehicleId: c.vehicleId ? c.vehicleId.toString() : undefined,
+      amount: c.amount,
+      currency: c.currency,
+      type: c.type,
+      dueDate: c.dueDate,
+      status: c.status,
+      createdAt: c.createdAt,
+      updatedAt: c.updatedAt,
+    }));
+    return reply.send(mapped);
   });
 }

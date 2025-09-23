@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import { requireAdmin, requireAuth } from '../plugins/roles';
 import { UserVehicle } from '../models/UserVehicle';
 import { Vehicle } from '../models/Vehicle';
+import { User } from '../models/User';
 
 export async function registerAssignmentRoutes(app: FastifyInstance) {
   // Admin: attach vehicle to user (activate or create)
@@ -19,14 +20,19 @@ export async function registerAssignmentRoutes(app: FastifyInstance) {
       return reply.code(400).send({ error: 'Invalid userId or vehicleId' });
     }
 
-    // ensure vehicle exists
+    // ensure user exists
+    const u = await User.findById(userId).select('_id').lean();
+    if (!u) return reply.code(404).send({ error: 'User not found' });
+
+    // ensure vehicle exists and is active
     const v = await Vehicle.findById(vehicleId).lean();
     if (!v) return reply.code(404).send({ error: 'Vehicle not found' });
+    if ((v as any).status !== 'active') return reply.code(400).send({ error: 'Vehicle is not active' });
 
     const uid = new mongoose.Types.ObjectId(userId);
     const vid = new mongoose.Types.ObjectId(vehicleId);
 
-    // either create new or reactivate existing
+    // either create new or reactivate existing; if active exists, return 409
     let record = await UserVehicle.findOne({ userId: uid, vehicleId: vid });
     if (!record) {
       record = await UserVehicle.create({ userId: uid, vehicleId: vid, active: true, assignedAt: new Date() });
@@ -34,6 +40,8 @@ export async function registerAssignmentRoutes(app: FastifyInstance) {
       record.active = true;
       record.assignedAt = new Date();
       await record.save();
+    } else {
+      return reply.code(409).send({ error: 'Assignment already active' });
     }
     return reply.code(201).send(record.toJSON());
   });
