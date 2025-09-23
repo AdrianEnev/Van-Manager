@@ -51,6 +51,52 @@ async function processOverdueCharges(app: FastifyInstance) {
   return { processed: pending.length, notified };
 }
 
+async function processDueSoonReminders(app: FastifyInstance) {
+  const env = loadApiEnv();
+  const leadHours = Number(env.NOTIFY_REMINDER_LEAD_HOURS ?? 48);
+  const throttleHours = Number(env.NOTIFY_THROTTLE_HOURS ?? 24);
+  const now = new Date();
+  const until = new Date(Date.now() + msFromHours(leadHours));
+
+  // Find pending charges due between now and the lead window
+  const dueSoon = await Charge.find({ status: 'pending', dueDate: { $gte: now, $lte: until } })
+    .limit(200)
+    .lean();
+  if (!dueSoon.length) return { processed: 0, notified: 0 };
+
+  let notified = 0;
+  for (const c of dueSoon) {
+    try {
+      // Throttle: check if we've sent a reminder recently for this charge
+      const since = new Date(Date.now() - msFromHours(throttleHours));
+      const dup = await Notification.exists({
+        userId: new mongoose.Types.ObjectId(c.userId as any),
+        relatedChargeId: new mongoose.Types.ObjectId(c._id as any),
+        channel: 'reminder',
+        sentAt: { $gte: since },
+      });
+      if (dup) continue;
+
+      const amount = (c as any).amount?.toFixed ? (c as any).amount.toFixed(2) : String((c as any).amount);
+      const due = c.dueDate ? new Date(c.dueDate).toLocaleDateString() : 'N/A';
+      const subject = `Upcoming payment due: £${amount}`;
+      const text = `You have an upcoming charge due soon.\n\nAmount: £${amount}\nDue date: ${due}\n\nPlease arrange payment by the due date.`;
+
+      await sendEmailNotification({
+        userId: c.userId as any,
+        subject,
+        text,
+        channel: 'reminder',
+        relatedChargeId: c._id as any,
+      });
+      notified += 1;
+    } catch (e) {
+      (app.log as any)?.error?.({ err: e, chargeId: String((c as any)._id) }, 'Failed reminder processing');
+    }
+  }
+  return { processed: dueSoon.length, notified };
+}
+
 export function startSchedulers(app: FastifyInstance) {
   const env = loadApiEnv();
   const enabled = String(env.ENABLE_SCHEDULER ?? 'true') === 'true';
@@ -70,9 +116,20 @@ export function startSchedulers(app: FastifyInstance) {
     }
   }
 
+  async function tickReminders() {
+    try {
+      const { processed, notified } = await processDueSoonReminders(app);
+      app.log.info({ processed, notified }, 'Reminder scheduler run');
+    } catch (e) {
+      app.log.error({ err: e }, 'Reminder scheduler failed');
+    }
+  }
+
   // Initial delay to allow server to finish booting, then interval
   setTimeout(() => {
     tickOverdue();
+    tickReminders();
     setInterval(tickOverdue, overdueIntervalMs).unref();
+    setInterval(tickReminders, overdueIntervalMs).unref();
   }, 5_000).unref?.();
 }

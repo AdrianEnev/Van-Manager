@@ -7,8 +7,8 @@ export async function registerAdminUserRoutes(app: FastifyInstance) {
   // Admin: list users (basic fields for UI)
   app.get('/api/users', async (req: FastifyRequest, reply: FastifyReply) => {
     await requireAdmin(app, req, reply);
-    const list = await User.find({}, { email: 1, name: 1, role: 1 }).sort({ createdAt: -1 }).lean();
-    return reply.send(list.map((u: any) => ({ id: u._id.toString(), email: u.email, name: u.name, role: u.role })));
+    const list = await User.find({}, { email: 1, name: 1, role: 1, isTransactionAllowed: 1 }).sort({ createdAt: -1 }).lean();
+    return reply.send(list.map((u: any) => ({ id: u._id.toString(), email: u.email, name: u.name, role: u.role, isTransactionAllowed: !!u.isTransactionAllowed })));
   });
   // Toggle isTransactionAllowed for a user
   app.patch('/api/users/:id/transaction-allowed', async (req: FastifyRequest, reply: FastifyReply) => {
