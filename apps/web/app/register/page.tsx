@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '../../components/ui/button';
 import { useAuth } from '../../components/auth-provider';
 import { loginWithGoogle } from '../../lib/api';
+import { useTranslation } from 'react-i18next';
 
 declare global {
   interface Window {
@@ -15,6 +16,7 @@ declare global {
 export default function RegisterPage() {
   const router = useRouter();
   const { authed, register, authenticateFromCookie } = useAuth();
+  const { t } = useTranslation('common');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -89,16 +91,17 @@ export default function RegisterPage() {
   }, [router, authenticateFromCookie]);
 
   return (
-    <div className="w-full max-w-md rounded-lg border bg-white p-6 shadow-sm">
-        <h1 className="text-2xl font-semibold">Register</h1>
-        <p className="mt-1 text-sm text-gray-600">Create an account to get started.</p>
+    <div className="mx-auto flex w-full max-w-2xl justify-center py-12 md:py-16">
+      <div className="w-full max-w-md rounded-lg border bg-white p-6 shadow-sm">
+        <h1 className="text-2xl font-semibold">{t('auth.registerTitle')}</h1>
+        <p className="mt-1 text-sm text-gray-600">{t('auth.registerSubtitle')}</p>
         <div className="mt-4">
           <div id="google-button" className="flex justify-center" />
           {gLoading && <p className="mt-2 text-sm text-gray-600">Signing up with Google…</p>}
         </div>
         <form onSubmit={onSubmit} className="mt-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium">Name</label>
+            <label className="block text-sm font-medium">{t('auth.name')}</label>
             <input
               type="text"
               className="mt-1 w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black"
@@ -108,7 +111,7 @@ export default function RegisterPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium">Email</label>
+            <label className="block text-sm font-medium">{t('auth.email')}</label>
             <input
               type="email"
               className="mt-1 w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black"
@@ -118,7 +121,7 @@ export default function RegisterPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium">Password</label>
+            <label className="block text-sm font-medium">{t('auth.password')}</label>
             <input
               type="password"
               className="mt-1 w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black"
@@ -129,12 +132,13 @@ export default function RegisterPage() {
             />
           </div>
           {error && <p className="text-sm text-red-600">{error}</p>}
-          <Button disabled={loading} className="w-full">{loading ? 'Registering…' : 'Register'}</Button>
+          <Button disabled={loading} className="w-full">{loading ? 'Registering…' : t('auth.registerCta')}</Button>
         </form>
         <p className="mt-4 text-sm text-gray-600">
-          Already have an account?{' '}
-          <a href="/login" className="text-black underline">Sign in</a>
+          {t('auth.haveAccount')}{' '}
+          <a href="/login" className="text-black underline">{t('auth.login')}</a>
         </p>
+      </div>
     </div>
   );
 }

@@ -3,11 +3,16 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../components/auth-provider';
 import { getMyVehicles, type VehicleAssignment } from '../../lib/api';
+import { Section, SectionTitle } from 'components/ui/section';
+import { Card, CardContent } from 'components/ui/card';
+import { EmptyState } from 'components/ui/empty-state';
+import { useTranslation } from 'react-i18next';
 
 export default function VehiclesPage() {
   const { authed, loading } = useAuth();
   const [vehicles, setVehicles] = useState<VehicleAssignment[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useTranslation('common');
 
   useEffect(() => {
     let mounted = true;
@@ -26,24 +31,33 @@ export default function VehiclesPage() {
   }, [authed]);
 
   if (!authed && !loading) {
-    return <div className="space-y-2 text-center"><p>Please log in to view your vehicles.</p></div>;
+    return <div className="space-y-2 text-center"><p>{t('access.loginToView')}</p></div>;
   }
 
   return (
     <div className="w-full space-y-6">
-      <h1 className="text-2xl font-semibold">My Vehicles</h1>
+      <h1 className="text-2xl font-semibold">{t('vehiclesPage.title')}</h1>
       {error && <div className="text-red-600 text-sm">{error}</div>}
-      <div className="grid gap-3">
-        {vehicles?.length ? vehicles.map((a) => (
-          <div key={a.assignmentId} className="rounded border bg-white p-4">
-            <div className="font-medium">{a.vehicle.plateNumber} {a.vehicle.makeModel ? `— ${a.vehicle.makeModel}` : ''}</div>
-            <div className="text-sm text-gray-600">Assigned: {new Date(a.assignedAt).toLocaleDateString()}</div>
-            {a.vehicle.motExpiry && (
-              <div className="text-sm">MOT expires: {new Date(a.vehicle.motExpiry).toLocaleDateString()}</div>
-            )}
-          </div>
-        )) : <div className="text-sm text-gray-600">No vehicles assigned.</div>}
-      </div>
+      <Section>
+        <SectionTitle>{t('vehiclesPage.assigned')}</SectionTitle>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {vehicles?.length ? (
+            vehicles.map((a) => (
+              <Card key={a.assignmentId}>
+                <CardContent>
+                  <div className="font-medium">{a.vehicle.plateNumber} {a.vehicle.makeModel ? `— ${a.vehicle.makeModel}` : ''}</div>
+                  <div className="mt-1 text-sm text-gray-600">{t('labels.assigned')} {new Date(a.assignedAt).toLocaleDateString()}</div>
+                  {a.vehicle.motExpiry && (
+                    <div className="mt-1 text-sm">{t('labels.motExpires')} {new Date(a.vehicle.motExpiry).toLocaleDateString()}</div>
+                  )}
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <EmptyState title={t('vehiclesPage.noVehicles')} description={t('vehiclesPage.assigned')} />
+          )}
+        </div>
+      </Section>
     </div>
   );
 }

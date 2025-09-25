@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '../../components/ui/button';
 import { useAuth } from '../../components/auth-provider';
 import { loginWithGoogle } from '../../lib/api';
+import { useTranslation } from 'react-i18next';
 
 declare global {
   interface Window {
@@ -15,6 +16,7 @@ declare global {
 export default function LoginPage() {
   const router = useRouter();
   const { authed, login, authenticateFromCookie } = useAuth();
+  const { t } = useTranslation('common');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -89,16 +91,17 @@ export default function LoginPage() {
   }, [router, authenticateFromCookie]);
 
   return (
-    <div className="w-full max-w-md rounded-lg border bg-white p-6 shadow-sm">
-            <h1 className="text-2xl font-semibold">Sign in</h1>
-            <p className="mt-1 text-sm text-gray-600">Use your account to continue.</p>
+    <div className="mx-auto flex w-full max-w-2xl justify-center py-12 md:py-16">
+      <div className="w-full max-w-md rounded-lg border bg-white p-6 shadow-sm">
+            <h1 className="text-2xl font-semibold">{t('auth.signInTitle')}</h1>
+            <p className="mt-1 text-sm text-gray-600">{t('auth.signInSubtitle')}</p>
             <div className="mt-4">
             <div id="google-button" className="flex justify-center" />
             {gLoading && <p className="mt-2 text-sm text-gray-600">Signing in with Google…</p>}
             </div>
             <form onSubmit={onSubmit} className="mt-6 space-y-4">
             <div>
-                <label className="block text-sm font-medium">Email</label>
+                <label className="block text-sm font-medium">{t('auth.email')}</label>
                 <input
                 type="email"
                 className="mt-1 w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black"
@@ -108,7 +111,7 @@ export default function LoginPage() {
                 />
             </div>
             <div>
-                <label className="block text-sm font-medium">Password</label>
+                <label className="block text-sm font-medium">{t('auth.password')}</label>
                 <input
                 type="password"
                 className="mt-1 w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black"
@@ -117,16 +120,17 @@ export default function LoginPage() {
                 required
                 />
                 <div className="mt-2 text-right">
-                <a href="/forgot-password" className="text-sm text-gray-700 underline">Forgot password?</a>
+                <a href="/forgot-password" className="text-sm text-gray-700 underline">{t('auth.forgotPassword')}</a>
                 </div>
             </div>
             {error && <p className="text-sm text-red-600">{error}</p>}
-            <Button disabled={loading} className="w-full">{loading ? 'Signing in…' : 'Sign in'}</Button>
+            <Button disabled={loading} className="w-full">{loading ? 'Signing in…' : t('auth.signIn')}</Button>
             </form>
             <p className="mt-4 text-sm text-gray-600">
-            Don't have an account?{' '}
-            <a href="/register" className="text-black underline">Register</a>
+            {t('auth.noAccount')}{' '}
+            <a href="/register" className="text-black underline">{t('auth.register')}</a>
             </p>
+      </div>
     </div>
   );
 }

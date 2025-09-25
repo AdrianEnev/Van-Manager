@@ -3,11 +3,17 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../components/auth-provider';
 import { getMyPenalties, type Penalty } from '../../lib/api';
+import { Section, SectionTitle } from 'components/ui/section';
+import { Card, CardContent } from 'components/ui/card';
+import { EmptyState } from 'components/ui/empty-state';
+import { Badge } from 'components/ui/badge';
+import { useTranslation } from 'react-i18next';
 
 export default function PenaltiesPage() {
   const { authed, loading } = useAuth();
   const [penalties, setPenalties] = useState<Penalty[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useTranslation('common');
 
   useEffect(() => {
     let mounted = true;
@@ -26,24 +32,33 @@ export default function PenaltiesPage() {
   }, [authed]);
 
   if (!authed && !loading) {
-    return <div className="space-y-2 text-center"><p>Please log in to view your penalties.</p></div>;
+    return <div className="space-y-2 text-center"><p>{t('access.loginToView')}</p></div>;
   }
 
   return (
     <div className="w-full space-y-6">
-      <h1 className="text-2xl font-semibold">Penalties</h1>
+      <h1 className="text-2xl font-semibold">{t('penaltiesPage.title')}</h1>
       {error && <div className="text-red-600 text-sm">{error}</div>}
-      <div className="grid gap-3">
-        {penalties?.length ? penalties.map((pe) => (
-          <div key={pe.id} className="rounded border bg-white p-4 flex items-center justify-between">
-            <div>
-              <div className="font-medium">£{pe.amount.toFixed(2)} — {pe.reason}</div>
-              {pe.dueDate && <div className="text-sm text-gray-600">Due: {new Date(pe.dueDate).toLocaleDateString()}</div>}
-            </div>
-            <div className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-700">{pe.status}</div>
-          </div>
-        )) : <div className="text-sm text-gray-600">No penalties.</div>}
-      </div>
+      <Section>
+        <SectionTitle>{t('penaltiesPage.active')}</SectionTitle>
+        <div className="grid gap-3">
+          {penalties?.length ? (
+            penalties.map((pe) => (
+              <Card key={pe.id}>
+                <CardContent className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium">£{pe.amount.toFixed(2)} — {pe.reason}</div>
+                    {pe.dueDate && <div className="text-sm text-gray-600">{t('labels.due')} {new Date(pe.dueDate).toLocaleDateString()}</div>}
+                  </div>
+                  <Badge>{pe.status}</Badge>
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <EmptyState title={t('penaltiesPage.noPenalties')} description={t('penaltiesPage.active')} />
+          )}
+        </div>
+      </Section>
     </div>
   );
 }

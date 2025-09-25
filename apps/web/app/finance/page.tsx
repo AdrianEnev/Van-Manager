@@ -3,12 +3,18 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../components/auth-provider';
 import { getMyCharges, getMyPayments, type Charge, type Payment } from '../../lib/api';
+import { Section, SectionTitle } from 'components/ui/section';
+import { Card, CardContent } from 'components/ui/card';
+import { Badge } from 'components/ui/badge';
+import { EmptyState } from 'components/ui/empty-state';
+import { useTranslation } from 'react-i18next';
 
 export default function FinancePage() {
   const { authed, loading } = useAuth();
   const [charges, setCharges] = useState<Charge[] | null>(null);
   const [payments, setPayments] = useState<Payment[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useTranslation('common');
 
   useEffect(() => {
     let mounted = true;
@@ -31,40 +37,58 @@ export default function FinancePage() {
   }, [authed]);
 
   if (!authed && !loading) {
-    return <div className="space-y-2 text-center"><p>Please log in to view your finance.</p></div>;
+    return <div className="space-y-2 text-center"><p>{t('access.loginToView')}</p></div>;
   }
 
   return (
     <div className="w-full space-y-8">
-      <h1 className="text-2xl font-semibold">Finance</h1>
+      <h1 className="text-2xl font-semibold">{t('financePage.title')}</h1>
       {error && <div className="text-red-600 text-sm">{error}</div>}
 
-      <section>
-        <h2 className="text-lg font-medium mb-2">Charges (last 14 days)</h2>
+      <Section>
+        <SectionTitle>{t('financePage.charges')}</SectionTitle>
         <div className="grid gap-3">
-          {charges?.length ? charges.map((c) => (
-            <div key={c.id} className="rounded border bg-white p-4 flex items-center justify-between">
-              <div>
-                <div className="font-medium">£{c.amount.toFixed(2)} — {c.type.replace('_',' ')}</div>
-                <div className="text-sm text-gray-600">Due: {new Date(c.dueDate).toLocaleDateString()}</div>
-              </div>
-              <div className={`text-xs px-2 py-1 rounded ${c.status === 'paid' ? 'bg-green-100 text-green-700' : c.status === 'overdue' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>{c.status}</div>
-            </div>
-          )) : <div className="text-sm text-gray-600">No recent charges.</div>}
+          {charges?.length ? (
+            charges.map((c) => (
+              <Card key={c.id}>
+                <CardContent className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium">£{c.amount.toFixed(2)} — {c.type.replace('_',' ')}</div>
+                    <div className="text-sm text-gray-600">{t('labels.due')} {new Date(c.dueDate).toLocaleDateString()}</div>
+                  </div>
+                  {c.status === 'paid' ? (
+                    <Badge tone="green">{t('status.paid')}</Badge>
+                  ) : c.status === 'overdue' ? (
+                    <Badge tone="red">{t('status.overdue')}</Badge>
+                  ) : (
+                    <Badge tone="yellow">{t('status.pending')}</Badge>
+                  )}
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <EmptyState title={t('financePage.noCharges')} description={t('financePage.charges')} />
+          )}
         </div>
-      </section>
+      </Section>
 
-      <section>
-        <h2 className="text-lg font-medium mb-2">Payments (last 14 days)</h2>
+      <Section>
+        <SectionTitle>{t('financePage.payments')}</SectionTitle>
         <div className="grid gap-3">
-          {payments?.length ? payments.map((p) => (
-            <div key={p.id} className="rounded border bg-white p-4">
-              <div className="font-medium">£{p.amount.toFixed(2)} — {p.method}</div>
-              <div className="text-sm text-gray-600">On: {new Date(p.createdAt).toLocaleString()}</div>
-            </div>
-          )) : <div className="text-sm text-gray-600">No recent payments.</div>}
+          {payments?.length ? (
+            payments.map((p) => (
+              <Card key={p.id}>
+                <CardContent>
+                  <div className="font-medium">£{p.amount.toFixed(2)} — {p.method}</div>
+                  <div className="text-sm text-gray-600">{t('labels.on')} {new Date(p.createdAt).toLocaleString()}</div>
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <EmptyState title={t('financePage.noPayments')} description={t('financePage.payments')} />
+          )}
         </div>
-      </section>
+      </Section>
     </div>
   );
 }
