@@ -153,3 +153,180 @@ export async function checkEmailExists(email: string): Promise<boolean> {
   const res = await apiFetch<{ exists: boolean }>(`/auth/check-email`, { method: 'POST', body: JSON.stringify({ email }) });
   return !!res.exists;
 }
+
+// Auto auth fetch: uses header if token exists, otherwise falls back to cookie-based fetch
+export async function apiFetchAuto<T>(path: string, init: RequestInit = {}): Promise<T> {
+  if (tokens.access) {
+    return apiFetch<T>(path, init);
+  }
+  return apiFetchCookie<T>(path, init);
+}
+
+// Domain types
+export type Vehicle = {
+  id: string;
+  plateNumber: string;
+  makeModel?: string;
+  motExpiry?: string;
+  status: 'active' | 'inactive';
+  notes?: string;
+};
+
+export type VehicleAssignment = {
+  assignmentId: string;
+  assignedAt: string;
+  vehicle: Vehicle;
+};
+
+export type Charge = {
+  id: string;
+  userId: string;
+  vehicleId?: string;
+  amount: number;
+  currency: string;
+  type: 'weekly_fee' | 'mot' | 'other';
+  dueDate: string;
+  status: 'pending' | 'paid' | 'overdue' | 'canceled';
+};
+
+export type Payment = {
+  id: string;
+  userId: string;
+  amount: number;
+  currency: string;
+  method: 'manual' | 'stripe';
+  relatedChargeId?: string;
+  createdAt: string;
+};
+
+export type Penalty = {
+  id: string;
+  userId: string;
+  vehicleId?: string;
+  amount: number;
+  reason: string;
+  dueDate?: string;
+  status: 'pending' | 'paid' | 'waived';
+  createdAt: string;
+};
+
+// Client functions for user endpoints
+export async function getMyVehicles(): Promise<VehicleAssignment[]> {
+  return apiFetchAuto<VehicleAssignment[]>(`/api/my/vehicles`);
+}
+
+export async function getMyCharges(windowDays = 14): Promise<Charge[]> {
+  const p = new URLSearchParams({ windowDays: String(windowDays) });
+  return apiFetchAuto<Charge[]>(`/api/my/charges?${p.toString()}`);
+}
+
+export async function getMyPayments(windowDays = 14): Promise<Payment[]> {
+  const p = new URLSearchParams({ windowDays: String(windowDays) });
+  return apiFetchAuto<Payment[]>(`/api/my/payments?${p.toString()}`);
+}
+
+export async function getMyPenalties(): Promise<Penalty[]> {
+  return apiFetchAuto<Penalty[]>(`/api/my/penalties`);
+}
+
+// Admin helpers (require admin role)
+export type AdminUser = { id: string; email: string; name: string; role: 'admin' | 'user' };
+export async function adminListUsers(): Promise<AdminUser[]> {
+  return apiFetchAuto<AdminUser[]>(`/api/users`);
+}
+export async function adminToggleTransactionAllowed(userId: string, isTransactionAllowed: boolean): Promise<{ id: string; isTransactionAllowed: boolean }> {
+  return apiFetchAuto(`/api/users/${userId}/transaction-allowed`, { method: 'PATCH', body: JSON.stringify({ isTransactionAllowed }) });
+}
+
+export async function adminListVehicles(): Promise<Vehicle[]> {
+  return apiFetchAuto<Vehicle[]>(`/api/vehicles`);
+}
+export async function adminCreateVehicle(payload: { plateNumber: string; makeModel?: string; motExpiry?: string; status?: 'active' | 'inactive'; notes?: string }): Promise<Vehicle> {
+  return apiFetchAuto<Vehicle>(`/api/vehicles`, { method: 'POST', body: JSON.stringify(payload) });
+}
+export async function adminUpdateVehicle(id: string, payload: Partial<{ makeModel: string; motExpiry: string; status: 'active' | 'inactive'; notes: string }>): Promise<Vehicle> {
+  return apiFetchAuto<Vehicle>(`/api/vehicles/${id}`, { method: 'PATCH', body: JSON.stringify(payload) });
+}
+
+export async function adminAssignVehicle(userId: string, vehicleId: string): Promise<{ id: string }> {
+  const res = await apiFetchAuto<{ id: string }>(`/api/assignments`, { method: 'POST', body: JSON.stringify({ userId, vehicleId }) });
+  return res;
+}
+export async function adminDetachAssignment(assignmentId: string): Promise<{ ok: true }> {
+  return apiFetchAuto<{ ok: true }>(`/api/assignments/${assignmentId}`, { method: 'DELETE' });
+}
+export async function adminListUserVehicles(userId: string): Promise<VehicleAssignment[]> {
+  return apiFetchAuto<VehicleAssignment[]>(`/api/users/${userId}/vehicles`);
+}
+
+export async function adminCreateCharge(payload: { userId: string; vehicleId?: string; amount: number; currency?: string; type: 'weekly_fee'|'mot'|'other'; dueDate: string; metadata?: Record<string, any> }): Promise<Charge> {
+  return apiFetchAuto<Charge>(`/api/charges`, { method: 'POST', body: JSON.stringify(payload) });
+}
+export async function adminListCharges(filters: Partial<{ userId: string; vehicleId: string; status: Charge['status']; type: Charge['type']; from: string; to: string }>): Promise<Charge[]> {
+  const p = new URLSearchParams();
+  Object.entries(filters).forEach(([k, v]) => { if (v) p.set(k, String(v)); });
+  return apiFetchAuto<Charge[]>(`/api/charges?${p.toString()}`);
+}
+export async function adminMarkChargePaid(id: string, payload?: { amount?: number; currency?: string; note?: string }): Promise<{ ok: true; paymentId: string }> {
+  return apiFetchAuto<{ ok: true; paymentId: string }>(`/api/charges/${id}/mark-paid`, { method: 'POST', body: JSON.stringify(payload || {}) });
+}
+
+export async function adminListPayments(filters: Partial<{ userId: string; method: 'manual'|'stripe'; from: string; to: string }>): Promise<Payment[]> {
+  const p = new URLSearchParams();
+  Object.entries(filters).forEach(([k, v]) => { if (v) p.set(k, String(v)); });
+  return apiFetchAuto<Payment[]>(`/api/payments?${p.toString()}`);
+}
+export async function adminRecordManualPayment(payload: { userId: string; amount: number; currency?: string; relatedChargeId?: string; note?: string }): Promise<Payment> {
+  return apiFetchAuto<Payment>(`/api/payments/manual`, { method: 'POST', body: JSON.stringify(payload) });
+}
+
+export async function adminCreatePenalty(payload: { userId: string; vehicleId?: string; amount: number; reason: string; dueDate?: string; metadata?: Record<string, any> }): Promise<Penalty> {
+  return apiFetchAuto<Penalty>(`/api/penalties`, { method: 'POST', body: JSON.stringify(payload) });
+}
+export async function adminListPenalties(filters: Partial<{ userId: string; vehicleId: string; status: Penalty['status']; from: string; to: string }>): Promise<Penalty[]> {
+  const p = new URLSearchParams();
+  Object.entries(filters).forEach(([k, v]) => { if (v) p.set(k, String(v)); });
+  return apiFetchAuto<Penalty[]>(`/api/penalties?${p.toString()}`);
+}
+export async function adminUpdatePenaltyStatus(id: string, status: Penalty['status']): Promise<Penalty> {
+  return apiFetchAuto<Penalty>(`/api/penalties/${id}/status`, { method: 'POST', body: JSON.stringify({ status }) });
+}
+
+// Plans (recurring charges)
+export type Plan = {
+  id: string;
+  userId: string;
+  vehicleId?: string;
+  amount: number;
+  currency: string;
+  frequency: 'weekly' | 'monthly' | 'custom_days';
+  intervalDays?: number;
+  startingDate: string;
+  nextDueDate: string;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export async function adminCreatePlan(payload: {
+  userId: string;
+  vehicleId?: string;
+  amount: number;
+  currency?: string;
+  frequency: 'weekly' | 'monthly' | 'custom_days';
+  intervalDays?: number;
+  startingDate: string;
+}): Promise<Plan> {
+  return apiFetchAuto<Plan>(`/api/plans`, { method: 'POST', body: JSON.stringify(payload) });
+}
+
+export async function adminListPlans(filters?: Partial<{ userId: string; vehicleId: string; active: boolean }>): Promise<Plan[]> {
+  const p = new URLSearchParams();
+  if (filters) Object.entries(filters).forEach(([k, v]) => { if (v !== undefined && v !== null) p.set(k, String(v)); });
+  const qs = p.toString();
+  return apiFetchAuto<Plan[]>(`/api/plans${qs ? `?${qs}` : ''}`);
+}
+
+export async function adminUpdatePlan(id: string, payload: Partial<{ amount: number; currency: string; active: boolean }>): Promise<Plan> {
+  return apiFetchAuto<Plan>(`/api/plans/${id}`, { method: 'PATCH', body: JSON.stringify(payload) });
+}

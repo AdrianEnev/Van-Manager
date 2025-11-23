@@ -5,10 +5,12 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../components/auth-provider';
 import { forgotPasswordCookie } from '../../lib/api';
 import { Button } from '../../components/ui/button';
+import { useTranslation } from 'react-i18next';
 
 export default function AccountPage() {
   const router = useRouter();
   const { user, authed, loading } = useAuth();
+  const { t } = useTranslation('common');
   const [sending, setSending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -35,22 +37,26 @@ export default function AccountPage() {
   return (
     <main className="min-h-screen p-6">
       <div className="mx-auto w-full max-w-2xl space-y-6">
-        <h1 className="text-2xl font-semibold">Account</h1>
+        <h1 className="text-2xl font-semibold">{t('account.title')}</h1>
         <div className="rounded-lg border bg-white p-6 shadow-sm">
           {loading && <p>Loading...</p>}
           {!loading && user && (
             <div className="space-y-4">
               <div>
-                <p className="text-sm text-gray-500">Name</p>
+                <p className="text-sm text-gray-500">{t('account.name')}</p>
                 <p className="text-base font-medium">{user.name}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Email</p>
+                <p className="text-sm text-gray-500">{t('account.email')}</p>
                 <p className="text-base font-medium">{user.email}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">{t('account.role')}</p>
+                <p className="text-base font-medium">{(user.role).toUpperCase()}</p>
               </div>
               <div className="pt-2">
                 <Button onClick={onResetPassword} disabled={sending}>
-                  {sending ? 'Sending…' : 'Reset Password'}
+                  {sending ? 'Sending…' : t('account.resetPassword')}
                 </Button>
               </div>
               {message && <p className="text-sm text-green-700">{message}</p>}

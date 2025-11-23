@@ -8,6 +8,14 @@ import { registerAuthRoutes } from './routes/auth';
 import authGuard from './plugins/authGuard';
 import cookie from '@fastify/cookie';
 import { registerUserRoutes } from './routes/users';
+import { registerVehicleRoutes } from './routes/vehicles';
+import { registerAssignmentRoutes } from './routes/assignments';
+import { registerChargeRoutes } from './routes/charges';
+import { registerPaymentRoutes } from './routes/payments';
+import { registerPenaltyRoutes } from './routes/penalties';
+import { registerAdminUserRoutes } from './routes/admin-users';
+import { startSchedulers } from './services/scheduler';
+import { registerPlanRoutes } from './routes/plans';
 
 dotenv.config();
 
@@ -37,6 +45,16 @@ async function bootstrap() {
   // Routes
   await registerAuthRoutes(app);
   await registerUserRoutes(app);
+  await registerVehicleRoutes(app);
+  await registerAssignmentRoutes(app);
+  await registerChargeRoutes(app);
+  await registerPaymentRoutes(app);
+  await registerPenaltyRoutes(app);
+  await registerAdminUserRoutes(app);
+  await registerPlanRoutes(app);
+
+  // Background jobs (overdue processing, notifications)
+  startSchedulers(app);
 
   const port = env.PORT;
   try {

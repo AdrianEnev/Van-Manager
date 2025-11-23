@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "../../../components/ui/button";
 import { resetPassword } from "../../../lib/api";
+import { useTranslation } from 'react-i18next';
 
 export default function ResetPasswordPage() {
   const router = useRouter();
   const params = useSearchParams();
   const token = params.get("token") || "";
+  const { t } = useTranslation('common');
 
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -55,14 +57,12 @@ export default function ResetPasswordPage() {
   return (
     <main className="min-h-screen flex items-center justify-center p-6">
       <div className="w-full max-w-md rounded-lg border bg-white p-6 shadow-sm">
-        <h1 className="text-2xl font-semibold">Reset your password</h1>
-        <p className="mt-1 text-sm text-gray-600">
-          Enter a new password below. Your reset link will expire after a short time.
-        </p>
+        <h1 className="text-2xl font-semibold">{t('auth.resetTitle')}</h1>
+        <p className="mt-1 text-sm text-gray-600">{t('auth.resetSubtitle')}</p>
 
         <form onSubmit={onSubmit} className="mt-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium">New password</label>
+            <label className="block text-sm font-medium">{t('auth.newPassword')}</label>
             <input
               type="password"
               className="mt-1 w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black"
@@ -73,7 +73,7 @@ export default function ResetPasswordPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium">Confirm new password</label>
+            <label className="block text-sm font-medium">{t('auth.confirmNewPassword')}</label>
             <input
               type="password"
               className="mt-1 w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black"
@@ -86,12 +86,12 @@ export default function ResetPasswordPage() {
           {error && <p className="text-sm text-red-600">{error}</p>}
           {message && <p className="text-sm text-green-700">{message}</p>}
           <Button disabled={submitting || !token} className="w-full">
-            {submitting ? "Resetting…" : "Reset password"}
+            {submitting ? "Resetting…" : t('auth.resetPassword')}
           </Button>
         </form>
 
         <p className="mt-4 text-sm text-gray-600">
-          Remembered your password? <a href="/login" className="text-black underline">Sign in</a>
+          {t('auth.remembered')} <a href="/login" className="text-black underline">{t('auth.login')}</a>
         </p>
       </div>
     </main>

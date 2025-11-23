@@ -1,0 +1,99 @@
+{
+  "appName": "Van Manager",
+  "nav": {
+    "dashboard": "Табло",
+    "vehicles": "Превозни средства",
+    "finance": "Финанси",
+    "penalties": "Глоби",
+    "admin": "Админ панел",
+    "account": "Акаунт",
+    "logout": "Изход",
+    "login": "Вход",
+    "register": "Регистрация"
+  },
+  "header": {
+    "viewingAsAdmin": "Преглеждаш таблото като админ.",
+    "goToAdmin": "Админ панел"
+  },
+  "actions": {
+    "close": "Затвори",
+    "openMenu": "Отвори меню"
+  },
+  "home": {
+    "headline": "Van Manager",
+    "cta": "Моля, влез или се регистрирай, за да продължиш."
+  },
+  "auth": {
+    "signInTitle": "Вход",
+    "signInSubtitle": "Използвай акаунта си, за да продължиш.",
+    "email": "Имейл",
+    "password": "Парола",
+    "forgotPassword": "Забравена парола?",
+    "signIn": "Вход",
+    "noAccount": "Нямаш акаунт?",
+    "register": "Регистрация",
+    "registerTitle": "Регистрация",
+    "registerSubtitle": "Създай акаунт, за да започнеш.",
+    "name": "Име",
+    "registerCta": "Регистрация",
+    "haveAccount": "Вече имаш акаунт?",
+    "login": "Вход",
+    "forgotTitle": "Забрави паролата си?",
+    "forgotSubtitle": "Въведи имейла на акаунта си и ще ти изпратим линк за смяна на паролата.",
+    "sendReset": "Изпрати линк",
+    "remembered": "Сети ли се за паролата?",
+    "resetTitle": "Нова парола",
+    "resetSubtitle": "Въведи нова парола. Линкът за смяна изтича след кратко време.",
+    "newPassword": "Нова парола",
+    "confirmNewPassword": "Потвърди новата парола",
+    "resetPassword": "Смени паролата"
+  },
+  "account": {
+    "title": "Акаунт",
+    "name": "Име",
+    "email": "Имейл",
+    "resetPassword": "Смени парола"
+  },
+  "dashboard": {
+    "title": "Табло",
+    "vehicles": "Моите превозни средства",
+    "charges": "Неплатени/Просрочени такси (последни 14 дни)",
+    "payments": "Последни плащания (последни 14 дни)",
+    "penalties": "Глоби",
+    "noVehicles": "Няма назначени превозни средства.",
+    "noCharges": "Няма скорошни такси.",
+    "noPayments": "Няма скорошни плащания.",
+    "noPenalties": "Няма глоби."
+  },
+  "vehiclesPage": {
+    "title": "Моите превозни средства",
+    "assigned": "Назначени превозни средства",
+    "noVehicles": "Няма назначени превозни средства."
+  },
+  "financePage": {
+    "title": "Финанси",
+    "charges": "Такси (последни 14 дни)",
+    "payments": "Плащания (последни 14 дни)",
+    "noCharges": "Няма скорошни такси.",
+    "noPayments": "Няма скорошни плащания."
+  },
+  "penaltiesPage": {
+    "title": "Глоби",
+    "active": "Активни глоби",
+    "noPenalties": "Няма глоби."
+  },
+  "labels": {
+    "assigned": "Назначено:",
+    "motExpires": "MOT изтича:",
+    "due": "Падеж:",
+    "on": "На:"
+  },
+  "status": {
+    "pending": "в изчакване",
+    "overdue": "просрочено",
+    "paid": "платено"
+  },
+  "access": {
+    "loginToView": "Моля, влез, за да видиш тази страница."
+  }
+}
