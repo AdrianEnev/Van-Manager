@@ -7,6 +7,7 @@ import { Section, SectionTitle } from 'components/ui/section';
 import { Card, CardContent } from 'components/ui/card';
 import { EmptyState } from 'components/ui/empty-state';
 import { useTranslation } from 'react-i18next';
+import { AppShell } from 'components/layout/app-shell';
 
 export default function VehiclesPage() {
   const { authed, loading } = useAuth();
@@ -35,17 +36,20 @@ export default function VehiclesPage() {
   }
 
   return (
-    <div className="w-full space-y-6">
-      <h1 className="text-2xl font-semibold">{t('vehiclesPage.title')}</h1>
+    <AppShell
+      overline="Driver portal"
+      title={t('vehiclesPage.title')}
+      subtitle={t('vehiclesPage.assigned')}
+    >
       {error && <div className="text-red-600 text-sm">{error}</div>}
       <Section>
         <SectionTitle>{t('vehiclesPage.assigned')}</SectionTitle>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 md:grid-cols-2">
           {vehicles?.length ? (
             vehicles.map((a) => (
-              <Card key={a.assignmentId}>
+              <Card key={a.assignmentId} className="border-2 border-transparent transition hover:border-gray-200">
                 <CardContent>
-                  <div className="font-medium">{a.vehicle.plateNumber} {a.vehicle.makeModel ? `— ${a.vehicle.makeModel}` : ''}</div>
+                  <div className="font-medium text-lg">{a.vehicle.plateNumber} {a.vehicle.makeModel ? `— ${a.vehicle.makeModel}` : ''}</div>
                   <div className="mt-1 text-sm text-gray-600">{t('labels.assigned')} {new Date(a.assignedAt).toLocaleDateString()}</div>
                   {a.vehicle.motExpiry && (
                     <div className="mt-1 text-sm">{t('labels.motExpires')} {new Date(a.vehicle.motExpiry).toLocaleDateString()}</div>
@@ -58,6 +62,6 @@ export default function VehiclesPage() {
           )}
         </div>
       </Section>
-    </div>
+    </AppShell>
   );
 }

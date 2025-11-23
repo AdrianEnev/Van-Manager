@@ -50,6 +50,10 @@ export default function AccountPage() {
                 <p className="text-sm text-gray-500">{t('account.email')}</p>
                 <p className="text-base font-medium">{user.email}</p>
               </div>
+              <div>
+                <p className="text-sm text-gray-500">{t('account.role')}</p>
+                <p className="text-base font-medium">{(user.role).toUpperCase()}</p>
+              </div>
               <div className="pt-2">
                 <Button onClick={onResetPassword} disabled={sending}>
                   {sending ? 'Sending…' : t('account.resetPassword')}

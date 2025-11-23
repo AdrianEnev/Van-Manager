@@ -3,6 +3,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../../../components/auth-provider';
 import { adminCreatePenalty, adminListPenalties, adminListUsers, adminListUserVehicles, adminUpdatePenaltyStatus, type AdminUser, type Penalty, type VehicleAssignment } from '../../../lib/api';
+import { AdminAppShell } from 'components/layout/admin-app-shell';
+import { Card, CardContent, CardHeader, CardTitle } from 'components/ui/card';
+import { Button } from 'components/ui/button';
+import { StatCard } from 'components/ui/stat-card';
 
 export default function AdminPenaltiesPage() {
   const { user, authed, loading } = useAuth();
@@ -59,61 +63,91 @@ export default function AdminPenaltiesPage() {
 
   if (!loading && !isAdmin) return <div className="text-sm text-red-600">Forbidden</div>;
 
+  const pendingCount = penalties.filter((p) => p.status === 'pending').length;
+  const paidCount = penalties.filter((p) => p.status === 'paid').length;
+  const waivedCount = penalties.filter((p) => p.status === 'waived').length;
+
   return (
-    <div className="w-full space-y-6">
-      <h1 className="text-2xl font-semibold">Admin · Penalties</h1>
+    <AdminAppShell
+      title="Penalties"
+      subtitle="Create, track, and resolve penalties."
+      actions={(
+        <Button size="sm" variant="outline" onClick={() => refreshPenalties(selectedUser)}>Refresh penalties</Button>
+      )}
+      toolbarSlot={(
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <StatCard label="Total penalties" value={penalties.length} description="Filtered" />
+          <StatCard label="Pending" value={pendingCount} description="Awaiting action" />
+          <StatCard label="Paid" value={paidCount} description="Resolved" />
+          <StatCard label="Waived" value={waivedCount} description="Cleared" />
+        </div>
+      )}
+    >
       {error && <div className="text-sm text-red-600">{error}</div>}
 
-      <form onSubmit={onCreate} className="rounded border bg-white p-4 grid gap-3 md:grid-cols-5">
-        <div>
-          <label className="block text-sm font-medium">User</label>
-          <select name="userId" className="mt-1 w-full rounded border px-2 py-1" value={selectedUser} onChange={(e)=>setSelectedUser(e.target.value)}>
-            {users.map(u => (<option key={u.id} value={u.id}>{u.name} ({u.email})</option>))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium">Vehicle (optional)</label>
-          <select name="vehicleAssignmentId" className="mt-1 w-full rounded border px-2 py-1">
-            <option value="">— None —</option>
-            {assignments.map(a => (<option key={a.assignmentId} value={a.assignmentId}>{a.vehicle.plateNumber} {a.vehicle.makeModel ? `— ${a.vehicle.makeModel}` : ''}</option>))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium">Amount</label>
-          <input name="amount" type="number" step="0.01" className="mt-1 w-full rounded border px-2 py-1" required />
-        </div>
-        <div>
-          <label className="block text-sm font-medium">Reason</label>
-          <input name="reason" className="mt-1 w-full rounded border px-2 py-1" required />
-        </div>
-        <div>
-          <label className="block text-sm font-medium">Due date (optional)</label>
-          <input name="dueDate" type="date" className="mt-1 w-full rounded border px-2 py-1" />
-        </div>
-        <div className="md:col-span-5">
-          <button className="rounded bg-black px-3 py-2 text-white">Create Penalty</button>
-        </div>
-      </form>
+      <Card>
+        <CardHeader>
+          <CardTitle>Create penalty</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={onCreate} className="grid gap-3 md:grid-cols-5">
+            <div>
+              <label className="block text-sm font-medium">User</label>
+              <select name="userId" className="mt-1 w-full rounded border px-2 py-1" value={selectedUser} onChange={(e)=>setSelectedUser(e.target.value)}>
+                {users.map(u => (<option key={u.id} value={u.id}>{u.name} ({u.email})</option>))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium">Vehicle (optional)</label>
+              <select name="vehicleAssignmentId" className="mt-1 w-full rounded border px-2 py-1">
+                <option value="">— None —</option>
+                {assignments.map(a => (<option key={a.assignmentId} value={a.assignmentId}>{a.vehicle.plateNumber} {a.vehicle.makeModel ? `— ${a.vehicle.makeModel}` : ''}</option>))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium">Amount</label>
+              <input name="amount" type="number" step="0.01" className="mt-1 w-full rounded border px-2 py-1" required />
+            </div>
+            <div>
+              <label className="block text-sm font-medium">Reason</label>
+              <input name="reason" className="mt-1 w-full rounded border px-2 py-1" required />
+            </div>
+            <div>
+              <label className="block text-sm font-medium">Due date (optional)</label>
+              <input name="dueDate" type="date" className="mt-1 w-full rounded border px-2 py-1" />
+            </div>
+            <div className="md:col-span-5 flex justify-end">
+              <Button type="submit">Create penalty</Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
 
       <section>
-        <h2 className="text-lg font-medium mb-2">Penalties</h2>
-        <div className="grid gap-3">
-          {penalties.length ? penalties.map((pe) => (
-            <div key={pe.id} className="rounded border bg-white p-4 flex items-center justify-between">
-              <div>
-                <div className="font-medium">£{pe.amount.toFixed(2)} — {pe.reason}</div>
-                {pe.dueDate && <div className="text-sm text-gray-600">Due: {new Date(pe.dueDate).toLocaleDateString()}</div>}
-                <div className="text-xs text-gray-600">Status: {pe.status}</div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Penalties</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {penalties.length ? penalties.map((pe) => (
+              <div key={pe.id} className="rounded-2xl border px-4 py-3">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="font-medium">£{pe.amount.toFixed(2)} — {pe.reason}</p>
+                    {pe.dueDate && <p className="text-sm text-gray-600">Due {new Date(pe.dueDate).toLocaleDateString()}</p>}
+                    <p className="text-xs text-gray-600">Status: {pe.status}</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button variant="ghost" size="sm" className="flex-1 sm:flex-none" onClick={() => setStatus(pe.id, 'pending')}>Pending</Button>
+                    <Button variant="ghost" size="sm" className="flex-1 sm:flex-none" onClick={() => setStatus(pe.id, 'paid')}>Paid</Button>
+                    <Button variant="ghost" size="sm" className="flex-1 sm:flex-none" onClick={() => setStatus(pe.id, 'waived')}>Waive</Button>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <button onClick={() => setStatus(pe.id, 'pending')} className="rounded border px-3 py-1 text-sm">Pending</button>
-                <button onClick={() => setStatus(pe.id, 'paid')} className="rounded border px-3 py-1 text-sm">Paid</button>
-                <button onClick={() => setStatus(pe.id, 'waived')} className="rounded border px-3 py-1 text-sm">Waive</button>
-              </div>
-            </div>
-          )) : <div className="text-sm text-gray-600">No penalties.</div>}
-        </div>
+            )) : <p className="text-sm text-gray-600">No penalties.</p>}
+          </CardContent>
+        </Card>
       </section>
-    </div>
+    </AdminAppShell>
   );
 }

@@ -45,7 +45,7 @@ export default function PenaltiesPage() {
           {penalties?.length ? (
             penalties.map((pe) => (
               <Card key={pe.id}>
-                <CardContent className="flex items-center justify-between">
+                <CardContent className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <div className="font-medium">£{pe.amount.toFixed(2)} — {pe.reason}</div>
                     {pe.dueDate && <div className="text-sm text-gray-600">{t('labels.due')} {new Date(pe.dueDate).toLocaleDateString()}</div>}

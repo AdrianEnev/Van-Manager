@@ -13,11 +13,22 @@
   },
   "header": {
     "viewingAsAdmin": "Viewing dashboard as an admin.",
-    "goToAdmin": "Admin Panel"
+    "goToAdmin": "Admin Panel",
+    "adminConsole": "Admin Console",
+    "primaryNav": "Main navigation",
+    "userMenu": "User menu"
+  },
+  "footer": {
+    "tagline": "Fleet operations made simple."
   },
   "actions": {
     "close": "Close",
-    "openMenu": "Open menu"
+    "openMenu": "Open menu",
+    "payOutstanding": "Pay outstanding",
+    "contactSupport": "Contact support",
+    "reportIssue": "Report an issue",
+    "switchToAdmin": "Open admin workspace",
+    "assignVehicle": "Assign vehicle"
   },
   "home": {
     "headline": "Van Manager",
@@ -52,10 +63,21 @@
     "title": "Account",
     "name": "Name",
     "email": "Email",
+    "role": "Role",
     "resetPassword": "Reset Password"
   },
   "dashboard": {
     "title": "Dashboard",
+    "welcome": "Welcome back, {{name}}",
+    "subtitle": "Stay on top of your vehicles, payments, and compliance in one place.",
+    "quickActions": "Quick actions",
+    "quickStats": "Overview",
+    "statVehicles": "Active vehicles",
+    "statOutstanding": "Outstanding balance",
+    "statPayments": "Payments (14 days)",
+    "statPenalties": "Active penalties",
+    "timeline": "Activity timeline",
+    "tasks": "Upcoming tasks",
     "vehicles": "My Vehicles",
     "charges": "Pending/Overdue Charges (last 14 days)",
     "payments": "Recent Payments (last 14 days)",
@@ -63,12 +85,25 @@
     "noVehicles": "No vehicles assigned.",
     "noCharges": "No recent charges.",
     "noPayments": "No recent payments.",
-    "noPenalties": "No penalties."
+    "noPenalties": "No penalties.",
+    "noActivity": "No recent activity.",
+    "motSoon": "MOT expiring soon",
+    "paymentsDue": "Payments due"
   },
   "vehiclesPage": {
     "title": "My Vehicles",
     "assigned": "Assigned vehicles",
-    "noVehicles": "No vehicles assigned."
+    "overview": "Vehicle list",
+    "details": "Vehicle details",
+    "assignment": "Assigned on",
+    "mot": "MOT expires",
+    "notes": "Notes",
+    "noVehicles": "No vehicles assigned.",
+    "noSelection": "Select a vehicle to view its details.",
+    "search": "Search registration or model",
+    "status": "Status",
+    "actions": "Vehicle actions",
+    "history": "Assignment history"
   },
   "financePage": {
     "title": "Finance",
@@ -95,5 +130,15 @@
   },
   "access": {
     "loginToView": "Please log in to view this page."
+  },
+  "adminNav": {
+    "overview": "Overview",
+    "vehicles": "Vehicles",
+    "assignments": "Assignments",
+    "charges": "Charges & Plans",
+    "payments": "Payments",
+    "penalties": "Penalties",
+    "users": "Users",
+    "finance": "Finance"
   }
 }

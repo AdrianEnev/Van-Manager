@@ -3,6 +3,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../../../components/auth-provider';
 import { adminCreatePlan, adminListCharges, adminListUsers, adminListUserVehicles, adminListPlans, adminMarkChargePaid, type AdminUser, type Charge, type VehicleAssignment, type Plan } from '../../../lib/api';
+import { AdminAppShell } from 'components/layout/admin-app-shell';
+import { Card, CardContent, CardHeader, CardTitle } from 'components/ui/card';
+import { Button } from 'components/ui/button';
+import { StatCard } from 'components/ui/stat-card';
 
 export default function AdminChargesPage() {
   const { user, authed, loading } = useAuth();
@@ -70,91 +74,124 @@ export default function AdminChargesPage() {
 
   if (!loading && !isAdmin) return <div className="text-sm text-red-600">Forbidden</div>;
 
+  const totalCharges = charges.length;
+  const overdueCharges = charges.filter((c) => c.status === 'overdue').length;
+  const activePlans = plans.filter((p) => p.active).length;
+  const linkedVehicles = assignments.length;
+
   return (
-    <div className="w-full space-y-6">
-      <h1 className="text-2xl font-semibold">Admin · Charges</h1>
+    <AdminAppShell
+      title="Charges & plans"
+      subtitle="Manage recurring plans and keep receivables up to date."
+      actions={(
+        <Button size="sm" variant="outline" onClick={() => selectedUser && refreshCharges(selectedUser)}>Refresh charges</Button>
+      )}
+      toolbarSlot={(
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <StatCard label="Total charges" value={totalCharges} description="For selected user" />
+          <StatCard label="Overdue" value={overdueCharges} description="Needs action" trend={overdueCharges ? { direction: 'up', label: `${overdueCharges} unpaid` } : undefined} />
+          <StatCard label="Active plans" value={activePlans} description="Auto billing" />
+          <StatCard label="Linked vehicles" value={linkedVehicles} description="Assignments" />
+        </div>
+      )}
+    >
       {error && <div className="text-sm text-red-600">{error}</div>}
       {success && <div className="text-sm text-green-700">{success}</div>}
 
-      <form onSubmit={onCreate} className="rounded border bg-white p-4 grid gap-3 md:grid-cols-6">
-        <div>
-          <label className="block text-sm font-medium">User</label>
-          <select name="userId" className="mt-1 w-full rounded border px-2 py-1" value={selectedUser} onChange={(e)=>setSelectedUser(e.target.value)}>
-            {users.map(u => (<option key={u.id} value={u.id}>{u.name} ({u.email})</option>))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium">Vehicle (optional)</label>
-          <select name="vehicleAssignmentId" className="mt-1 w-full rounded border px-2 py-1">
-            <option value="">— None —</option>
-            {assignments.map(a => (<option key={a.assignmentId} value={a.assignmentId}>{a.vehicle.plateNumber} {a.vehicle.makeModel ? `— ${a.vehicle.makeModel}` : ''}</option>))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium">Amount</label>
-          <input name="amount" type="number" step="0.01" className="mt-1 w-full rounded border px-2 py-1" required />
-        </div>
-        <div>
-          <label className="block text-sm font-medium">Frequency</label>
-          <select
-            name="frequency"
-            className="mt-1 w-full rounded border px-2 py-1"
-            value={frequency}
-            onChange={(e) => setFrequency(e.target.value as any)}
-          >
-            <option value="weekly">Weekly</option>
-            <option value="monthly">Monthly</option>
-            <option value="custom_days">Custom (days)</option>
-          </select>
-        </div>
-        {frequency === 'custom_days' && (
-          <div>
-            <label className="block text-sm font-medium">Interval days (custom only)</label>
-            <input name="intervalDays" type="number" min={1} className="mt-1 w-full rounded border px-2 py-1" placeholder="e.g., 13" required />
-          </div>
-        )}
-        <div>
-          <label className="block text-sm font-medium">Starting date</label>
-          <input name="startingDate" type="date" className="mt-1 w-full rounded border px-2 py-1" required />
-        </div>
-        <div className="md:col-span-6">
-          <button className="rounded bg-black px-3 py-2 text-white">Create Recurring Plan</button>
-        </div>
-      </form>
-
-      <section>
-        <h2 className="text-lg font-medium mb-2">Recurring Plans for selected user</h2>
-        <div className="grid gap-3">
-          {plans.length ? plans.map((p) => (
-            <div key={p.id} className="rounded border bg-white p-4 flex items-center justify-between">
-              <div>
-                <div className="font-medium">£{p.amount.toFixed(2)} — {p.frequency === 'custom_days' ? `every ${p.intervalDays} days` : p.frequency}</div>
-                <div className="text-sm text-gray-600">Starting: {new Date(p.startingDate).toLocaleDateString()}</div>
-                <div className="text-sm text-gray-600">Next due: {new Date(p.nextDueDate).toLocaleDateString()}</div>
-              </div>
-              <span className={`text-xs px-2 py-1 rounded ${p.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>{p.active ? 'active' : 'inactive'}</span>
+      <Card>
+        <CardHeader>
+          <CardTitle>Create recurring plan</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={onCreate} className="grid gap-3 md:grid-cols-6">
+            <div>
+              <label className="block text-sm font-medium">User</label>
+              <select name="userId" className="mt-1 w-full rounded border px-2 py-1" value={selectedUser} onChange={(e)=>setSelectedUser(e.target.value)}>
+                {users.map(u => (<option key={u.id} value={u.id}>{u.name} ({u.email})</option>))}
+              </select>
             </div>
-          )) : <div className="text-sm text-gray-600">No plans for this user.</div>}
-        </div>
-      </section>
-
-      <section>
-        <h2 className="text-lg font-medium mb-2">Charges</h2>
-        <div className="grid gap-3">
-          {charges.length ? charges.map((c) => (
-            <div key={c.id} className="rounded border bg-white p-4 flex items-center justify-between">
-              <div>
-                <div className="font-medium">£{c.amount.toFixed(2)} — {c.type.replace('_',' ')}</div>
-                <div className="text-sm text-gray-600">Due: {new Date(c.dueDate).toLocaleDateString()}</div>
-                <div className="text-xs text-gray-600">Status: {c.status}</div>
-              </div>
-              {c.status !== 'paid' && (
-                <button onClick={() => markPaid(c.id)} className="rounded border px-3 py-1 text-sm">Mark Paid</button>
-              )}
+            <div>
+              <label className="block text-sm font-medium">Vehicle (optional)</label>
+              <select name="vehicleAssignmentId" className="mt-1 w-full rounded border px-2 py-1">
+                <option value="">— None —</option>
+                {assignments.map(a => (<option key={a.assignmentId} value={a.assignmentId}>{a.vehicle.plateNumber} {a.vehicle.makeModel ? `— ${a.vehicle.makeModel}` : ''}</option>))}
+              </select>
             </div>
-          )) : <div className="text-sm text-gray-600">No charges.</div>}
-        </div>
+            <div>
+              <label className="block text-sm font-medium">Amount</label>
+              <input name="amount" type="number" step="0.01" className="mt-1 w-full rounded border px-2 py-1" required />
+            </div>
+            <div>
+              <label className="block text-sm font-medium">Frequency</label>
+              <select
+                name="frequency"
+                className="mt-1 w-full rounded border px-2 py-1"
+                value={frequency}
+                onChange={(e) => setFrequency(e.target.value as any)}
+              >
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+                <option value="custom_days">Custom (days)</option>
+              </select>
+            </div>
+            {frequency === 'custom_days' && (
+              <div>
+                <label className="block text-sm font-medium">Interval days (custom only)</label>
+                <input name="intervalDays" type="number" min={1} className="mt-1 w-full rounded border px-2 py-1" placeholder="e.g., 13" required />
+              </div>
+            )}
+            <div>
+              <label className="block text-sm font-medium">Starting date</label>
+              <input name="startingDate" type="date" className="mt-1 w-full rounded border px-2 py-1" required />
+            </div>
+            <div className="md:col-span-6 flex justify-end">
+              <Button type="submit">Create plan</Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+
+      <section className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Recurring plans</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {plans.length ? plans.map((p) => (
+              <div key={p.id} className="rounded-2xl border px-4 py-3">
+                <p className="font-medium">£{p.amount.toFixed(2)} — {p.frequency === 'custom_days' ? `every ${p.intervalDays} days` : p.frequency}</p>
+                <div className="flex flex-col gap-1 text-sm text-gray-600 sm:flex-row sm:flex-wrap sm:gap-4">
+                  <span>Starting {new Date(p.startingDate).toLocaleDateString()}</span>
+                  <span>Next due {new Date(p.nextDueDate).toLocaleDateString()}</span>
+                </div>
+                <span className={`mt-2 inline-flex text-xs rounded-full px-2 py-1 ${p.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>{p.active ? 'Active' : 'Inactive'}</span>
+              </div>
+            )) : <p className="text-sm text-gray-600">No plans for this user.</p>}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Charges</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {charges.length ? charges.map((c) => (
+              <div key={c.id} className="rounded-2xl border px-4 py-3">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="font-medium">£{c.amount.toFixed(2)} — {c.type.replace('_',' ')}</p>
+                    <p className="text-sm text-gray-600">Due {new Date(c.dueDate).toLocaleDateString()}</p>
+                    <p className="text-xs text-gray-600">Status: {c.status}</p>
+                  </div>
+                  {c.status !== 'paid' && (
+                    <Button variant="outline" size="sm" onClick={() => markPaid(c.id)} className="w-full sm:w-auto">Mark paid</Button>
+                  )}
+                </div>
+              </div>
+            )) : <p className="text-sm text-gray-600">No charges.</p>}
+          </CardContent>
+        </Card>
       </section>
-    </div>
+    </AdminAppShell>
   );
 }

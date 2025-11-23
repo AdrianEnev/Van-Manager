@@ -1,16 +1,25 @@
 "use client";
 
 import Link from 'next/link';
+import type { Route } from 'next';
+import clsx from 'clsx';
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { useAuth } from './auth-provider';
 import { Button } from './ui/button';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from './i18n/language-switcher';
 
+type NavLinkItem = {
+  href: Route;
+  label: string;
+};
+
 export default function Header() {
   const { authed, user, refresh, logout } = useAuth();
   const [open, setOpen] = useState(false);
   const { t } = useTranslation('common');
+  const pathname = usePathname();
 
   useEffect(() => {
     refresh().catch(() => {});
@@ -24,136 +33,184 @@ export default function Header() {
     }
   }
 
-  function MobileNavContent() {
+  const primaryNav: NavLinkItem[] = authed && user
+    ? user.role === 'admin'
+      ? [
+          { href: '/dashboard', label: t('nav.dashboard') },
+          { href: '/admin', label: t('header.adminConsole') },
+        ]
+      : [
+          { href: '/dashboard', label: t('nav.dashboard') },
+          { href: '/vehicles', label: t('nav.vehicles') },
+          { href: '/finance', label: t('nav.finance') },
+          { href: '/penalties', label: t('nav.penalties') },
+        ]
+    : [];
+
+  const guestLinks: NavLinkItem[] = [
+    { href: '/login', label: t('nav.login') },
+    { href: '/register', label: t('nav.register') },
+  ];
+
+  function renderDesktopAuth() {
+    if (!authed || !user) {
+      return (
+        <div className="hidden items-center gap-2 sm:flex">
+          {guestLinks.map((item) => (
+            <Button key={item.href} size="sm" variant={item.href === '/register' ? 'secondary' : 'outline'} asChild>
+              <Link href={item.href}>{item.label}</Link>
+            </Button>
+          ))}
+        </div>
+      );
+    }
     return (
-      <div className="flex h-full w-80 max-w-[80vw] flex-col bg-white">
-        <div className="flex items-center justify-between border-b px-4 py-3">
-          <Link href="/" onClick={() => setOpen(false)} className="font-semibold">{t('appName')}</Link>
-          <button aria-label={t('actions.close')} onClick={() => setOpen(false)} className="rounded p-2 hover:bg-gray-100">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+      <div className="hidden items-center gap-3 sm:flex">
+        <div className="hidden text-right sm:block">
+          <p className="text-sm font-medium text-gray-900">{user.name}</p>
+          <p className="text-xs uppercase tracking-wide text-gray-500">{user.role === 'admin' ? t('nav.admin') : t('nav.account')}</p>
         </div>
-        <nav className="flex-1 overflow-y-auto px-2 py-3">
-          {authed && user ? (
-            <div className="space-y-1">
-              {user.role === 'user' && (
-                <>
-                  <MobileLink href="/dashboard" label={t('nav.dashboard')} onClick={() => setOpen(false)} />
-                  <MobileLink href="/vehicles" label={t('nav.vehicles')} onClick={() => setOpen(false)} />
-                  <MobileLink href="/finance" label={t('nav.finance')} onClick={() => setOpen(false)} />
-                  <MobileLink href="/penalties" label={t('nav.penalties')} onClick={() => setOpen(false)} />
-                </>
-              )}
-              {user.role === 'admin' && (
-                <MobileLink href="/admin" label={t('nav.admin')} onClick={() => setOpen(false)} />
-              )}
-              <div className="mt-3 border-t pt-3">
-                <MobileLink href="/account" label={t('nav.account')} onClick={() => setOpen(false)} />
-                <button onClick={onLogout} className="mt-1 w-full rounded-md border px-3 py-2 text-left text-sm hover:bg-gray-50">{t('nav.logout')}</button>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-1">
-              <MobileLink href="/login" label={t('nav.login')} onClick={() => setOpen(false)} />
-              <MobileLink href="/register" label={t('nav.register')} onClick={() => setOpen(false)} />
-            </div>
-          )}
-        </nav>
-        <div className="border-t px-4 py-3 flex items-center justify-between">
-          <div className="text-xs text-gray-500">© {new Date().getFullYear()} {t('appName')}</div>
-          <LanguageSwitcher layout="inline" />
-        </div>
+        <Button size="sm" variant="secondary" asChild>
+          <Link href="/account">{t('nav.account')}</Link>
+        </Button>
+        <Button variant="outline" size="sm" onClick={onLogout}>{t('nav.logout')}</Button>
       </div>
     );
   }
 
-  function MobileLink({ href, label, onClick }: { href: string; label: string; onClick?: () => void }) {
+  function DesktopNav() {
+    if (!primaryNav.length) return null;
     return (
-      <Link href={href as any} onClick={onClick} className="block rounded-md px-3 py-2 text-sm text-gray-800 hover:bg-gray-50">
-        {label}
-      </Link>
+      <nav className="ml-6 hidden items-center gap-3 md:flex" aria-label={t('header.primaryNav')}>
+        {primaryNav.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={clsx(
+              'text-sm font-medium text-gray-600 transition hover:text-gray-900',
+              pathname?.startsWith(item.href) && 'text-gray-900'
+            )}
+          >
+            {item.label}
+          </Link>
+        ))}
+      </nav>
+    );
+  }
+
+  function MobileNav() {
+    const items = primaryNav.length ? primaryNav : guestLinks;
+    return (
+      <>
+        <div
+          aria-hidden
+          className={clsx('fixed inset-0 z-[90] bg-black/30 transition-opacity', open ? 'opacity-100' : 'pointer-events-none opacity-0')}
+          onClick={() => setOpen(false)}
+        />
+        <div
+          className={clsx(
+            'fixed inset-y-0 left-0 z-[100] w-80 max-w-[80vw] transform bg-white shadow-xl transition-transform duration-200 ease-out',
+            open ? 'translate-x-0' : '-translate-x-full'
+          )}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="flex items-center justify-between border-b px-4 py-3">
+            <Link href="/" className="text-lg font-semibold" onClick={() => setOpen(false)}>
+              {t('appName')}
+            </Link>
+            <button
+              aria-label={t('actions.close')}
+              className="rounded p-2 hover:bg-gray-100"
+              onClick={() => setOpen(false)}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto px-4 py-4">
+            {authed && user && (
+              <div className="mb-4 rounded-xl border bg-gray-50 px-4 py-3">
+                <p className="text-sm font-semibold text-gray-900">{user.name}</p>
+                <p className="text-xs uppercase tracking-wide text-gray-500">{user.role === 'admin' ? t('nav.admin') : t('nav.account')}</p>
+              </div>
+            )}
+            <nav className="space-y-1" aria-label={t('header.primaryNav')}>
+              {items.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setOpen(false)}
+                  className={clsx(
+                    'block rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100',
+                    pathname?.startsWith(item.href) && 'bg-gray-100 text-gray-900'
+                  )}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+            <div className="mt-6 space-y-2">
+              {authed && user ? (
+                <>
+                  <Button className="w-full" variant="secondary" asChild>
+                    <Link href="/account" onClick={() => setOpen(false)}>
+                      {t('nav.account')}
+                    </Link>
+                  </Button>
+                  <Button className="w-full" variant="outline" onClick={onLogout}>
+                    {t('nav.logout')}
+                  </Button>
+                </>
+              ) : (
+                guestLinks.map((item) => (
+                  <Button key={item.href} className="w-full" variant={item.href === '/register' ? 'secondary' : 'default'} asChild>
+                    <Link href={item.href} onClick={() => setOpen(false)}>
+                      {item.label}
+                    </Link>
+                  </Button>
+                ))
+              )}
+            </div>
+          </div>
+          <div className="flex items-center justify-between border-t px-4 py-3 text-xs text-gray-500">
+            <span>© {new Date().getFullYear()} {t('appName')}</span>
+            <LanguageSwitcher layout="inline" />
+          </div>
+        </div>
+      </>
     );
   }
 
   return (
     <>
-    <header className="sticky top-0 z-30 border-b bg-white/80 backdrop-blur">
-      <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-        {/* Left: Brand + Desktop Nav */}
-        <div className="flex items-center gap-3">
-          {/* Mobile: hamburger */}
-          <button
-            className="-ml-2 rounded p-2 hover:bg-gray-100 sm:hidden"
-            aria-label={t('actions.openMenu')}
-            onClick={() => setOpen(true)}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
-
-          <Link href="/" className="font-semibold">{t('appName')}</Link>
-
-          {/* Desktop nav */}
-          <nav className="ml-4 hidden items-center gap-4 sm:flex">
-            {authed && user && (
-              <>
-                {user.role === 'user' && (
-                  <>
-                    <Link href="/dashboard" className="text-sm text-gray-700 hover:text-black">{t('nav.dashboard')}</Link>
-                    <Link href="/vehicles" className="text-sm text-gray-700 hover:text-black">{t('nav.vehicles')}</Link>
-                    <Link href="/finance" className="text-sm text-gray-700 hover:text-black">{t('nav.finance')}</Link>
-                    <Link href="/penalties" className="text-sm text-gray-700 hover:text-black">{t('nav.penalties')}</Link>
-                  </>
-                )}
-                {user.role === 'admin' && (
-                  <Link href="/admin" className="text-sm text-gray-700 hover:text-black">{t('nav.admin')}</Link>
-                )}
-              </>
-            )}
-          </nav>
+      <header className="sticky top-0 z-40 border-b bg-white/80 backdrop-blur">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-4 lg:px-6">
+          <div className="flex items-center gap-3">
+            <button
+              className="-ml-2 rounded p-2 hover:bg-gray-100 md:hidden"
+              aria-label={t('actions.openMenu')}
+              onClick={() => setOpen(true)}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            <Link href="/" className="text-lg font-semibold">
+              {t('appName')}
+            </Link>
+            <DesktopNav />
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="hidden sm:block">
+              <LanguageSwitcher />
+            </div>
+            {renderDesktopAuth()}
+          </div>
         </div>
-
-        {/* Right: Actions (desktop) */}
-        <div className="hidden items-center gap-3 sm:flex">
-          <LanguageSwitcher />
-          {authed && user ? (
-            <>
-              <Button size="sm" variant="secondary" asChild>
-                <Link href="/account">{t('nav.account')}</Link>
-              </Button>
-              <Button variant="outline" size="sm" onClick={onLogout}>{t('nav.logout')}</Button>
-            </>
-          ) : (
-            <>
-              <Button size="sm" asChild>
-                <Link href="/login">{t('nav.login')}</Link>
-              </Button>
-              <Button size="sm" variant="secondary" asChild>
-                <Link href="/register">{t('nav.register')}</Link>
-              </Button>
-            </>
-          )}
-        </div>
-
-        {/* Right: actions condensed on mobile (account shown in drawer) */}
-        <div className="sm:hidden" />
-      </div>
-    </header>
-    {/* Mobile drawer overlay (outside header to avoid stacking context issues) */}
-    {open && (
-      <div aria-hidden className="fixed inset-0 z-[90] bg-black/30" onClick={() => setOpen(false)} />
-    )}
-    {/* Mobile drawer panel */}
-    <div
-      className={`fixed inset-y-0 left-0 z-[100] transform transition-transform duration-200 ease-out ${open ? 'translate-x-0' : '-translate-x-full'}`}
-      role="dialog"
-      aria-modal="true"
-    >
-      <MobileNavContent />
-    </div>
+      </header>
+      <MobileNav />
     </>
   );
 }
