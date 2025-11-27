@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import { Charge } from '../models/Charge';
 import { Notification } from '../models/Notification';
 import { sendEmailNotification } from './notifications';
-import { loadApiEnv } from '@services/config/src/env';
+import { loadApiEnv } from '../env';
 import { Plan } from '../models/Plan';
 
 function msFromHours(h: number) { return h * 60 * 60 * 1000; }
