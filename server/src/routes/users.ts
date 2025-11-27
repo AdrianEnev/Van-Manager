@@ -2,7 +2,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { OAuth2Client } from 'google-auth-library';
 import { z } from 'zod';
 import { User, type IUser } from '../models/User';
-import { loadApiEnv } from '@services/config/src/env';
+import { loadApiEnv } from '../env';
 
 function setAuthCookie(reply: FastifyReply, token: string, isProd: boolean) {
   // In production we need SameSite=None and Secure for cross-site usage (e.g. different domains)

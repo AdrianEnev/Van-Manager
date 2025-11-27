@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { User, IUser } from '../models/User';
 import crypto from 'crypto';
 import { sendPasswordResetEmail } from '../services/mailer';
-import { loadApiEnv } from '@services/config/src/env';
+import { loadApiEnv } from '../env';
 
 const registerSchema = z.object({
   email: z.string().email(),

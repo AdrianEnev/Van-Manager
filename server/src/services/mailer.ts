@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import { loadApiEnv } from '@services/config/src/env';
+import { loadApiEnv } from '../env';
 
 let _transporter: nodemailer.Transporter | null = null;
 
