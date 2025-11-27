@@ -1,8 +1,8 @@
 # example netlify.toml
 [build]
-  command = "pnpm --filter web build"
+  command = "cd client && npm run build"
   functions = "netlify/functions"
-  publish = "apps/web/.next"
+  publish = "client/.next"
 
   ## Uncomment to use this redirect for Single Page Applications like create-react-app.
   ## Not needed for static site generators.
