@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import fastify from 'fastify';
 import { loadApiEnv } from './env';
 import { connectMongo } from './db/mongo';
@@ -25,7 +26,13 @@ async function bootstrap() {
   });
 
   // Register plugins
-  await app.register(cors, { origin: env.CORS_ORIGIN });
+  const corsOrigins = env.CORS_ORIGINS ? env.CORS_ORIGINS.split(',') : (env.CORS_ORIGIN ? [env.CORS_ORIGIN] : ['http://localhost:3000']);
+  await app.register(cors, { 
+    origin: corsOrigins,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  });
   await app.register(jwt, { secret: env.JWT_SECRET });
   await app.register(cookie);
   await app.register(authGuard);
