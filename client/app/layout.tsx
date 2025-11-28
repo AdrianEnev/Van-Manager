@@ -6,8 +6,8 @@ import { AuthProvider } from '../components/auth-provider';
 import I18nProvider from '../components/i18n/i18n-provider';
 
 export const metadata: Metadata = {
-  title: 'Van Manager',
-  description: 'Van Manager',
+  title: 'Enev Service',
+  description: 'Enev Service',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

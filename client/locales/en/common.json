@@ -1,5 +1,5 @@
 {
-  "appName": "Van Manager",
+  "appName": "Enev Service",
   "nav": {
     "dashboard": "Dashboard",
     "vehicles": "Vehicles",
@@ -31,7 +31,7 @@
     "assignVehicle": "Assign vehicle"
   },
   "home": {
-    "headline": "Van Manager",
+    "headline": "Enev Service",
     "cta": "Please log in or register to continue."
   },
   "auth": {
