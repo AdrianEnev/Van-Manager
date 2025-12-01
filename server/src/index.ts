@@ -27,8 +27,12 @@ async function bootstrap() {
 
   // Register plugins
   const corsOrigins = env.CORS_ORIGINS ? env.CORS_ORIGINS.split(',') : (env.CORS_ORIGIN ? [env.CORS_ORIGIN] : ['http://localhost:3000']);
+  
+  // Filter out empty origins and validate
+  const validOrigins = corsOrigins.filter(origin => origin && origin.trim() !== '');
+  
   await app.register(cors, { 
-    origin: corsOrigins,
+    origin: validOrigins.length > 0 ? validOrigins : true,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],

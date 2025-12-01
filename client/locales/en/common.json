@@ -1,5 +1,5 @@
 {
-  "appName": "Enev Service",
+  "appName": "Enev Service LTD",
   "nav": {
     "dashboard": "Dashboard",
     "vehicles": "Vehicles",
@@ -31,7 +31,7 @@
     "assignVehicle": "Assign vehicle"
   },
   "home": {
-    "headline": "Enev Service",
+    "headline": "Enev Service LTD",
     "cta": "Please log in or register to continue."
   },
   "auth": {

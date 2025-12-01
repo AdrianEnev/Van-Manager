@@ -9,6 +9,7 @@ import { useAuth } from './auth-provider';
 import { Button } from './ui/button';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from './i18n/language-switcher';
+import { useVehicleAccess } from './vehicle-access-provider';
 
 type NavLinkItem = {
   href: Route;
@@ -17,6 +18,7 @@ type NavLinkItem = {
 
 export default function Header() {
   const { authed, user, refresh, logout } = useAuth();
+  const { shouldRestrict } = useVehicleAccess();
   const [open, setOpen] = useState(false);
   const { t } = useTranslation('common');
   const pathname = usePathname();
@@ -33,7 +35,7 @@ export default function Header() {
     }
   }
 
-  const primaryNav: NavLinkItem[] = authed && user
+  const primaryNav: NavLinkItem[] = authed && user && !shouldRestrict
     ? user.role === 'admin'
       ? [
           { href: '/dashboard', label: t('nav.dashboard') },
@@ -61,6 +63,13 @@ export default function Header() {
               <Link href={item.href}>{item.label}</Link>
             </Button>
           ))}
+        </div>
+      );
+    }
+    if (shouldRestrict) {
+      return (
+        <div className="hidden items-center gap-3 sm:flex">
+          <Button variant="outline" size="sm" onClick={onLogout}>{t('nav.logout')}</Button>
         </div>
       );
     }
@@ -99,6 +108,7 @@ export default function Header() {
   }
 
   function MobileNav() {
+    if (shouldRestrict) return null;
     const items = primaryNav.length ? primaryNav : guestLinks;
     return (
       <>
@@ -188,29 +198,33 @@ export default function Header() {
       <header className="sticky top-0 z-40 border-b bg-white/80 backdrop-blur">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-4 lg:px-6">
           <div className="flex items-center gap-3">
-            <button
-              className="-ml-2 rounded p-2 hover:bg-gray-100 md:hidden"
-              aria-label={t('actions.openMenu')}
-              onClick={() => setOpen(true)}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
+            {!shouldRestrict && (
+              <button
+                className="-ml-2 rounded p-2 hover:bg-gray-100 md:hidden"
+                aria-label={t('actions.openMenu')}
+                onClick={() => setOpen(true)}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+            )}
             <Link href="/" className="text-lg font-semibold">
               {t('appName')}
             </Link>
-            <DesktopNav />
+            {!shouldRestrict && <DesktopNav />}
           </div>
           <div className="flex items-center gap-3">
-            <div className="hidden sm:block">
-              <LanguageSwitcher />
-            </div>
+            {!shouldRestrict && (
+              <div className="hidden sm:block">
+                <LanguageSwitcher />
+              </div>
+            )}
             {renderDesktopAuth()}
           </div>
         </div>
       </header>
-      <MobileNav />
+      {!shouldRestrict && <MobileNav />}
     </>
   );
 }

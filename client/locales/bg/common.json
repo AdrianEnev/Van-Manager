@@ -1,5 +1,5 @@
 {
-  "appName": "Enev Service",
+  "appName": "Enev Service LTD",
   "nav": {
     "dashboard": "Табло",
     "vehicles": "Превозни средства",
@@ -20,7 +20,7 @@
     "openMenu": "Отвори меню"
   },
   "home": {
-    "headline": "Enev Service",
+    "headline": "Enev Service LTD",
     "cta": "Моля, влез или се регистрирай, за да продължиш."
   },
   "auth": {
