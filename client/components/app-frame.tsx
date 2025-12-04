@@ -6,16 +6,19 @@ import SiteFooter from './site-footer';
 import { useVehicleAccess } from './vehicle-access-provider';
 import { Button } from './ui/button';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from './auth-provider';
 
 export default function AppFrame({ children }: { children: ReactNode }) {
   const { awaitingApproval, shouldRestrict, checking, error, refreshStatus } = useVehicleAccess();
+  const { user } = useAuth();
+  const showAwaitingPanel = user?.role === 'user' && shouldRestrict;
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50">
       <Header />
       <main className="flex-1 w-full max-w-6xl mx-auto px-4 py-8 lg:px-6">
         <div className="space-y-10">
-          {shouldRestrict ? (
+          {showAwaitingPanel ? (
             <AwaitingApprovalPanel awaitingApproval={awaitingApproval} checking={checking} error={error} onRetry={refreshStatus} />
           ) : (
             children
