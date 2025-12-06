@@ -13,6 +13,8 @@ export default function AdminVehiclesPage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [editingVehicleId, setEditingVehicleId] = useState<string | null>(null);
+  const [editingSavingId, setEditingSavingId] = useState<string | null>(null);
 
   const isAdmin = useMemo(() => authed && user?.role === 'admin', [authed, user]);
 
@@ -45,6 +47,34 @@ export default function AdminVehiclesPage() {
       setError(err?.message || 'Create failed');
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function onEditSubmit(e: React.FormEvent<HTMLFormElement>, vehicleId: string) {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const makeModel = String(fd.get('makeModel') ?? '').trim() || undefined;
+    const motExpiry = String(fd.get('motExpiry') ?? '').trim() || undefined;
+    const notes = String(fd.get('notes') ?? '').trim() || undefined;
+    const statusValue = String(fd.get('status') ?? '').trim();
+    const payload: Record<string, any> = {};
+    if (makeModel !== undefined) payload.makeModel = makeModel;
+    if (motExpiry) payload.motExpiry = motExpiry;
+    if (notes !== undefined) payload.notes = notes;
+    if (statusValue === 'active' || statusValue === 'inactive') payload.status = statusValue;
+    if (!Object.keys(payload).length) {
+      setEditingVehicleId(null);
+      return;
+    }
+    setEditingSavingId(vehicleId);
+    try {
+      await adminUpdateVehicle(vehicleId, payload);
+      setEditingVehicleId(null);
+      await refresh();
+    } catch (err: any) {
+      setError(err?.message || 'Update failed');
+    } finally {
+      setEditingSavingId(null);
     }
   }
 
@@ -107,26 +137,68 @@ export default function AdminVehiclesPage() {
       </Card>
 
       <section className="grid gap-4 lg:grid-cols-2">
-        {vehicles.length ? vehicles.map((v) => (
-          <Card key={v.id} className="border-2 border-transparent transition hover:border-gray-200">
-            <CardHeader className="flex flex-row items-start justify-between">
-              <div>
-                <CardTitle>{v.plateNumber}</CardTitle>
-                <p className="text-sm text-gray-500">{v.makeModel || 'Model unknown'}</p>
-              </div>
-              <span className={`text-xs rounded-full px-3 py-1 ${v.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>{v.status}</span>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm text-gray-600">
-              {v.motExpiry && <p>MOT: {new Date(v.motExpiry).toLocaleDateString()}</p>}
-              {v.notes && <p>Notes: {v.notes}</p>}
-              <div className="pt-2">
-                <Button variant="outline" size="sm" onClick={() => toggleStatus(v)}>
-                  {v.status === 'active' ? 'Mark inactive' : 'Activate'}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )) : (
+        {vehicles.length ? vehicles.map((v) => {
+          const isEditing = editingVehicleId === v.id;
+          const motInputValue = v.motExpiry ? new Date(v.motExpiry).toISOString().slice(0, 10) : '';
+          return (
+            <Card key={v.id} className="border-2 border-transparent transition hover:border-gray-200">
+              <CardHeader className="flex flex-row items-start justify-between">
+                <div>
+                  <CardTitle>{v.plateNumber}</CardTitle>
+                  <p className="text-sm text-gray-500">{v.makeModel || 'Model unknown'}</p>
+                </div>
+                <div className="flex flex-col items-end gap-2">
+                  <span className={`text-xs rounded-full px-3 py-1 ${v.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>{v.status}</span>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => toggleStatus(v)}>
+                      {v.status === 'active' ? 'Mark inactive' : 'Activate'}
+                    </Button>
+                    <Button variant="secondary" size="sm" onClick={() => setEditingVehicleId(isEditing ? null : v.id)}>
+                      {isEditing ? 'Close editor' : 'Edit details'}
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm text-gray-600">
+                {v.motExpiry && <p>MOT: {new Date(v.motExpiry).toLocaleDateString()}</p>}
+                {v.notes && <p>Notes: {v.notes}</p>}
+                {isEditing && (
+                  <form onSubmit={(e) => onEditSubmit(e, v.id)} className="mt-3 grid gap-3 text-sm">
+                    <div>
+                      <label className="block text-xs font-medium uppercase tracking-wide">Make/Model</label>
+                      <input name="makeModel" defaultValue={v.makeModel || ''} className="mt-1 w-full rounded border px-2 py-1" placeholder="Ford Transit" />
+                    </div>
+                    <div className="grid gap-3 md:grid-cols-2">
+                      <div>
+                        <label className="block text-xs font-medium uppercase tracking-wide">MOT expiry</label>
+                        <input name="motExpiry" type="date" defaultValue={motInputValue} className="mt-1 w-full rounded border px-2 py-1" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium uppercase tracking-wide">Status</label>
+                        <select name="status" defaultValue={v.status} className="mt-1 w-full rounded border px-2 py-1">
+                          <option value="active">Active</option>
+                          <option value="inactive">Inactive</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium uppercase tracking-wide">Notes</label>
+                      <textarea name="notes" defaultValue={v.notes || ''} className="mt-1 w-full rounded border px-2 py-1" rows={3} placeholder="Maintenance notes" />
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button type="button" variant="ghost" size="sm" onClick={() => setEditingVehicleId(null)}>
+                        Cancel
+                      </Button>
+                      <Button type="submit" size="sm" disabled={editingSavingId === v.id}>
+                        {editingSavingId === v.id ? 'Saving…' : 'Save changes'}
+                      </Button>
+                    </div>
+                  </form>
+                )}
+              </CardContent>
+            </Card>
+          );
+        }) : (
           <Card className="lg:col-span-2">
             <CardContent>
               <p className="text-sm text-gray-600">No vehicles yet.</p>

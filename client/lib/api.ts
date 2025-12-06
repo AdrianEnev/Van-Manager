@@ -1,4 +1,5 @@
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://van-manager.fly.dev';
+//export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://van-manager.fly.dev';
+export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 const ACCESS_KEY = 'accessToken';
 const REFRESH_KEY = 'refreshToken';

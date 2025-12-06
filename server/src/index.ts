@@ -10,11 +10,13 @@ import authGuard from './plugins/authGuard';
 // Import route registration functions
 import { registerAuthRoutes } from './routes/auth';
 import { registerUserRoutes } from './routes/users';
+import { registerAdminUserRoutes } from './routes/admin-users';
 import { registerVehicleRoutes } from './routes/vehicles';
 import { registerAssignmentRoutes } from './routes/assignments';
 import { registerChargeRoutes } from './routes/charges';
 import { registerPaymentRoutes } from './routes/payments';
 import { registerPenaltyRoutes } from './routes/penalties';
+import { registerPlanRoutes } from './routes/plans';
 
 async function bootstrap() {
   const env = await loadApiEnv();
@@ -47,11 +49,13 @@ async function bootstrap() {
   // Register routes
   await registerAuthRoutes(app);
   await registerUserRoutes(app);
+  await registerAdminUserRoutes(app);
   await registerVehicleRoutes(app);
   await registerAssignmentRoutes(app);
   await registerChargeRoutes(app);
   await registerPaymentRoutes(app);
   await registerPenaltyRoutes(app);
+  await registerPlanRoutes(app);
 
   const port = env.PORT;
   await app.listen({ port, host: '0.0.0.0' });
