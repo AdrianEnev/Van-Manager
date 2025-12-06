@@ -1,14 +1,14 @@
 "use client";
 
 import Link from 'next/link';
-import type { Route } from 'next';
 import clsx from 'clsx';
 import { usePathname } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 
-const adminLinks: { href: Route; key: keyof typeof labelKeys }[] = [
+const adminLinks: { href: string; key: keyof typeof labelKeys }[] = [
   { href: '/admin', key: 'overview' },
   { href: '/admin/vehicles', key: 'vehicles' },
+  { href: '/admin/maintenance', key: 'maintenance' },
   { href: '/admin/assignments', key: 'assignments' },
   { href: '/admin/charges', key: 'charges' },
   { href: '/admin/payments', key: 'payments' },
@@ -19,6 +19,7 @@ const adminLinks: { href: Route; key: keyof typeof labelKeys }[] = [
 const labelKeys = {
   overview: 'adminNav.overview',
   vehicles: 'adminNav.vehicles',
+  maintenance: 'adminNav.maintenance',
   assignments: 'adminNav.assignments',
   charges: 'adminNav.charges',
   payments: 'adminNav.payments',
@@ -40,7 +41,7 @@ export function AdminSidebar() {
         {adminLinks.map((link) => (
           <Link
             key={link.href}
-            href={link.href}
+            href={{ pathname: link.href }}
             className={clsx(
               'rounded-2xl px-3 py-2 text-sm font-medium transition whitespace-nowrap lg:block',
               pathname?.startsWith(link.href)

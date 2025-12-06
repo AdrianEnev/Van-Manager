@@ -211,6 +211,40 @@ export type Penalty = {
   createdAt: string;
 };
 
+export type MaintenanceRecord = {
+  id: string;
+  vehicleId: string;
+  type: 'oil_change' | 'tyre_change';
+  performedAt: string;
+  odometerMiles: number;
+  intervalMiles?: number;
+  tyreMileage?: number;
+  notes?: string;
+  createdBy?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type MaintenanceSummaryItem = {
+  vehicleId: string;
+  plateNumber: string;
+  makeModel?: string;
+  status: 'active' | 'inactive';
+  lastOilChange: {
+    performedAt: string;
+    odometerMiles: number;
+    intervalMiles: number;
+    nextDueOdometer: number;
+    notes?: string;
+  } | null;
+  lastTyreChange: {
+    performedAt: string;
+    odometerMiles: number;
+    tyreMileage?: number;
+    notes?: string;
+  } | null;
+};
+
 // Client functions for user endpoints
 export async function getMyVehicles(): Promise<VehicleAssignment[]> {
   return apiFetchAuto<VehicleAssignment[]>(`/api/my/vehicles`);
@@ -291,6 +325,31 @@ export async function adminListPenalties(filters: Partial<{ userId: string; vehi
 }
 export async function adminUpdatePenaltyStatus(id: string, status: Penalty['status']): Promise<Penalty> {
   return apiFetchAuto<Penalty>(`/api/penalties/${id}/status`, { method: 'POST', body: JSON.stringify({ status }) });
+}
+
+export async function adminGetMaintenanceSummary(): Promise<MaintenanceSummaryItem[]> {
+  return apiFetchAuto<MaintenanceSummaryItem[]>(`/api/maintenance/summary`);
+}
+
+export async function adminListMaintenanceRecords(vehicleId: string, type?: 'oil_change' | 'tyre_change'): Promise<MaintenanceRecord[]> {
+  const p = new URLSearchParams();
+  if (type) p.set('type', type);
+  const qs = p.toString();
+  return apiFetchAuto<MaintenanceRecord[]>(`/api/vehicles/${vehicleId}/maintenance${qs ? `?${qs}` : ''}`);
+}
+
+export async function adminCreateMaintenanceRecord(
+  vehicleId: string,
+  payload: {
+    type: 'oil_change' | 'tyre_change';
+    performedAt: string;
+    odometerMiles: number;
+    intervalMiles?: number;
+    tyreMileage?: number;
+    notes?: string;
+  }
+): Promise<MaintenanceRecord> {
+  return apiFetchAuto<MaintenanceRecord>(`/api/vehicles/${vehicleId}/maintenance`, { method: 'POST', body: JSON.stringify(payload) });
 }
 
 // Plans (recurring charges)

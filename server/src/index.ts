@@ -17,6 +17,7 @@ import { registerChargeRoutes } from './routes/charges';
 import { registerPaymentRoutes } from './routes/payments';
 import { registerPenaltyRoutes } from './routes/penalties';
 import { registerPlanRoutes } from './routes/plans';
+import { registerMaintenanceRoutes } from './routes/maintenance';
 
 async function bootstrap() {
   const env = await loadApiEnv();
@@ -56,6 +57,7 @@ async function bootstrap() {
   await registerPaymentRoutes(app);
   await registerPenaltyRoutes(app);
   await registerPlanRoutes(app);
+  await registerMaintenanceRoutes(app);
 
   const port = env.PORT;
   await app.listen({ port, host: '0.0.0.0' });
