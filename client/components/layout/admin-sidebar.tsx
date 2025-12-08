@@ -38,20 +38,25 @@ export function AdminSidebar() {
         <p className="text-base font-semibold text-gray-900">{t('nav.admin')}</p>
       </div>
       <nav className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:gap-1 lg:overflow-visible">
-        {adminLinks.map((link) => (
-          <Link
-            key={link.href}
-            href={{ pathname: link.href }}
-            className={clsx(
-              'rounded-2xl px-3 py-2 text-sm font-medium transition whitespace-nowrap lg:block',
-              pathname?.startsWith(link.href)
-                ? 'bg-gray-900 text-white shadow'
-                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-            )}
-          >
-            {t(`adminNav.${link.key}`)}
-          </Link>
-        ))}
+        {adminLinks.map((link) => {
+          const isActive = link.href === '/admin'
+            ? pathname === '/admin'
+            : pathname?.startsWith(link.href);
+          return (
+            <Link
+              key={link.href}
+              href={{ pathname: link.href }}
+              className={clsx(
+                'rounded-2xl px-3 py-2 text-sm font-medium transition whitespace-nowrap lg:block',
+                isActive
+                  ? 'bg-gray-900 text-white shadow'
+                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+              )}
+            >
+              {t(`adminNav.${link.key}`)}
+            </Link>
+          );
+        })}
       </nav>
     </aside>
   );
