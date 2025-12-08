@@ -71,6 +71,7 @@ export async function registerVehicleRoutes(app: FastifyInstance) {
     await requireAdmin(app, req, reply);
     const { id } = (req.params as any);
     const bodySchema = z.object({
+      plateNumber: z.string().min(2).optional(),
       makeModel: z.string().optional(),
       motExpiry: z.coerce.date().optional(),
       status: z.enum(['active', 'inactive']).optional(),
@@ -78,7 +79,13 @@ export async function registerVehicleRoutes(app: FastifyInstance) {
     });
     const parsed = bodySchema.safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
-    const v = await Vehicle.findByIdAndUpdate(id, { $set: parsed.data }, { new: true }).lean();
+    const update: Record<string, any> = {};
+    if (parsed.data.plateNumber !== undefined) update.plateNumber = parsed.data.plateNumber.toUpperCase();
+    if (parsed.data.makeModel !== undefined) update.makeModel = parsed.data.makeModel;
+    if (parsed.data.motExpiry !== undefined) update.motExpiry = parsed.data.motExpiry;
+    if (parsed.data.status !== undefined) update.status = parsed.data.status;
+    if (parsed.data.notes !== undefined) update.notes = parsed.data.notes;
+    const v = await Vehicle.findByIdAndUpdate(id, { $set: update }, { new: true, runValidators: true }).lean();
     if (!v) return reply.code(404).send({ error: 'Not found' });
     const mapped = {
       id: (v as any)._id?.toString?.(),
@@ -97,8 +104,8 @@ export async function registerVehicleRoutes(app: FastifyInstance) {
   app.delete('/api/vehicles/:id', async (req: FastifyRequest, reply: FastifyReply) => {
     await requireAdmin(app, req, reply);
     const { id } = (req.params as any);
-    const v = await Vehicle.findByIdAndUpdate(id, { $set: { status: 'inactive' } }, { new: true }).lean();
-    if (!v) return reply.code(404).send({ error: 'Not found' });
+    const deleted = await Vehicle.findByIdAndDelete(id).lean();
+    if (!deleted) return reply.code(404).send({ error: 'Not found' });
     return reply.send({ ok: true });
   });
 

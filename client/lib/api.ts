@@ -283,6 +283,10 @@ export async function adminUpdateVehicle(id: string, payload: Partial<{ makeMode
   return apiFetchAuto<Vehicle>(`/api/vehicles/${id}`, { method: 'PATCH', body: JSON.stringify(payload) });
 }
 
+export async function adminDeleteVehicle(id: string): Promise<{ ok: true }> {
+  return apiFetchAuto<{ ok: true }>(`/api/vehicles/${id}`, { method: 'DELETE' });
+}
+
 export async function adminAssignVehicle(userId: string, vehicleId: string): Promise<{ id: string }> {
   const res = await apiFetchAuto<{ id: string }>(`/api/assignments`, { method: 'POST', body: JSON.stringify({ userId, vehicleId }) });
   return res;

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../../../components/auth-provider';
-import { adminCreateVehicle, adminListVehicles, adminUpdateVehicle, type Vehicle } from '../../../lib/api';
+import { adminCreateVehicle, adminDeleteVehicle, adminListVehicles, adminUpdateVehicle, type Vehicle } from '../../../lib/api';
 import { AdminAppShell } from 'components/layout/admin-app-shell';
 import { Card, CardContent, CardHeader, CardTitle } from 'components/ui/card';
 import { Button } from 'components/ui/button';
@@ -53,11 +53,13 @@ export default function AdminVehiclesPage() {
   async function onEditSubmit(e: React.FormEvent<HTMLFormElement>, vehicleId: string) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
+    const plateNumber = String(fd.get('plateNumber') ?? '').trim() || undefined;
     const makeModel = String(fd.get('makeModel') ?? '').trim() || undefined;
     const motExpiry = String(fd.get('motExpiry') ?? '').trim() || undefined;
     const notes = String(fd.get('notes') ?? '').trim() || undefined;
     const statusValue = String(fd.get('status') ?? '').trim();
     const payload: Record<string, any> = {};
+    if (plateNumber !== undefined) payload.plateNumber = plateNumber;
     if (makeModel !== undefined) payload.makeModel = makeModel;
     if (motExpiry) payload.motExpiry = motExpiry;
     if (notes !== undefined) payload.notes = notes;
@@ -82,6 +84,17 @@ export default function AdminVehiclesPage() {
     const next = v.status === 'active' ? 'inactive' : 'active';
     await adminUpdateVehicle(v.id, { status: next });
     await refresh();
+  }
+
+  async function onDeleteVehicle(vehicleId: string) {
+    if (!window.confirm('Delete this vehicle? This cannot be undone.')) return;
+    try {
+      await adminDeleteVehicle(vehicleId);
+      if (editingVehicleId === vehicleId) setEditingVehicleId(null);
+      await refresh();
+    } catch (err: any) {
+      setError(err?.message || 'Delete failed');
+    }
   }
 
   if (!loading && !isAdmin) return <div className="text-sm text-red-600">Forbidden</div>;
@@ -137,7 +150,7 @@ export default function AdminVehiclesPage() {
       </Card>
 
       <section className="grid gap-4 lg:grid-cols-2">
-        {vehicles.length ? vehicles.map((v) => {
+        {vehicles.length ? vehicles.map((v, index) => {
           const isEditing = editingVehicleId === v.id;
           const motInputValue = v.motExpiry ? new Date(v.motExpiry).toISOString().slice(0, 10) : '';
           return (
@@ -145,7 +158,7 @@ export default function AdminVehiclesPage() {
               <CardHeader className="flex flex-row items-start justify-between">
                 <div>
                   <CardTitle>{v.plateNumber}</CardTitle>
-                  <p className="text-sm text-gray-500">{v.makeModel || 'Model unknown'}</p>
+                  <p className="text-sm text-gray-500">Vehicle #{index + 1} · {v.makeModel || 'Model unknown'}</p>
                 </div>
                 <div className="flex flex-col items-end gap-2">
                   <span className={`text-xs rounded-full px-3 py-1 ${v.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>{v.status}</span>
@@ -164,6 +177,10 @@ export default function AdminVehiclesPage() {
                 {v.notes && <p>Notes: {v.notes}</p>}
                 {isEditing && (
                   <form onSubmit={(e) => onEditSubmit(e, v.id)} className="mt-3 grid gap-3 text-sm">
+                    <div>
+                      <label className="block text-xs font-medium uppercase tracking-wide">Plate number</label>
+                      <input name="plateNumber" defaultValue={v.plateNumber} className="mt-1 w-full rounded border px-2 py-1" placeholder="AB12 CDE" />
+                    </div>
                     <div>
                       <label className="block text-xs font-medium uppercase tracking-wide">Make/Model</label>
                       <input name="makeModel" defaultValue={v.makeModel || ''} className="mt-1 w-full rounded border px-2 py-1" placeholder="Ford Transit" />
@@ -185,12 +202,17 @@ export default function AdminVehiclesPage() {
                       <label className="block text-xs font-medium uppercase tracking-wide">Notes</label>
                       <textarea name="notes" defaultValue={v.notes || ''} className="mt-1 w-full rounded border px-2 py-1" rows={3} placeholder="Maintenance notes" />
                     </div>
-                    <div className="flex justify-end gap-2">
-                      <Button type="button" variant="ghost" size="sm" onClick={() => setEditingVehicleId(null)}>
-                        Cancel
-                      </Button>
-                      <Button type="submit" size="sm" disabled={editingSavingId === v.id}>
-                        {editingSavingId === v.id ? 'Saving…' : 'Save changes'}
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+                      <div className="flex gap-2">
+                        <Button type="button" variant="ghost" size="sm" onClick={() => setEditingVehicleId(null)}>
+                          Cancel
+                        </Button>
+                        <Button type="submit" size="sm" disabled={editingSavingId === v.id}>
+                          {editingSavingId === v.id ? 'Saving…' : 'Save changes'}
+                        </Button>
+                      </div>
+                      <Button type="button" size="sm" variant="destructive" onClick={() => onDeleteVehicle(v.id)}>
+                        Delete vehicle
                       </Button>
                     </div>
                   </form>
