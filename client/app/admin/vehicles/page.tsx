@@ -15,6 +15,7 @@ export default function AdminVehiclesPage() {
   const [saving, setSaving] = useState(false);
   const [editingVehicleId, setEditingVehicleId] = useState<string | null>(null);
   const [editingSavingId, setEditingSavingId] = useState<string | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const isAdmin = useMemo(() => authed && user?.role === 'admin', [authed, user]);
 
@@ -82,8 +83,16 @@ export default function AdminVehiclesPage() {
 
   async function toggleStatus(v: Vehicle) {
     const next = v.status === 'active' ? 'inactive' : 'active';
-    await adminUpdateVehicle(v.id, { status: next });
-    await refresh();
+    setTogglingId(v.id);
+    setError(null);
+    try {
+      await adminUpdateVehicle(v.id, { status: next });
+      await refresh();
+    } catch (err: any) {
+      setError(err?.message || 'Failed to update status');
+    } finally {
+      setTogglingId(null);
+    }
   }
 
   async function onDeleteVehicle(vehicleId: string) {
@@ -163,10 +172,10 @@ export default function AdminVehiclesPage() {
                 <div className="flex flex-col items-end gap-2">
                   <span className={`text-xs rounded-full px-3 py-1 ${v.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>{v.status}</span>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => toggleStatus(v)}>
-                      {v.status === 'active' ? 'Mark inactive' : 'Activate'}
+                    <Button variant="outline" size="md" onClick={() => toggleStatus(v)} disabled={togglingId === v.id}>
+                      {togglingId === v.id ? 'Updating…' : v.status === 'active' ? 'Mark inactive' : 'Activate'}
                     </Button>
-                    <Button variant="secondary" size="sm" onClick={() => setEditingVehicleId(isEditing ? null : v.id)}>
+                    <Button variant="secondary" size="md" onClick={() => setEditingVehicleId(isEditing ? null : v.id)}>
                       {isEditing ? 'Close editor' : 'Edit details'}
                     </Button>
                   </div>
