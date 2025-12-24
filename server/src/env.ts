@@ -15,12 +15,17 @@ const apiEnvSchema = z.object({
   WEB_BASE_URL: z.string().url().optional(),
   // Email provider configuration (SES via SMTP)
   EMAIL_PROVIDER: z.enum(['ses']).default('ses'),
+  // Stripe
+  STRIPE_SECRET_KEY: z.string().min(1),
+  STRIPE_WEBHOOK_SECRET: z.string().min(1),
+  STRIPE_PUBLISHABLE_KEY: z.string().optional(),
   SES_SMTP_HOST: z.string().optional(),
   SES_SMTP_PORT: z.coerce.number().optional(),
   SES_SMTP_USER: z.string().optional(),
   SES_SMTP_PASS: z.string().optional(),
   EMAIL_FROM: z.string().email().optional(),
   EMAIL_FROM_NAME: z.string().optional(),
+  EMAIL_SUPPORT: z.string().email().optional(),
   // Scheduler & notification tuning
   ENABLE_SCHEDULER: z.coerce.boolean().default(true).optional(),
   OVERDUE_CRON_INTERVAL_MS: z.coerce.number().default(900000).optional(), // 15 minutes
