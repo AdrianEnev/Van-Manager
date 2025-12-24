@@ -27,7 +27,7 @@ export default function PaymentCancelPage() {
                                 <Link href="/dashboard">Dashboard</Link>
                             </Button>
                             <Button asChild>
-                                <Link href="/finance">Try Again</Link>
+                                <Link href="/dashboard">Try Again</Link>
                             </Button>
                         </div>
                     </CardContent>

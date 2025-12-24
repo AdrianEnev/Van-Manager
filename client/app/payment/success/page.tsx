@@ -7,10 +7,11 @@ import { AppShell } from 'components/layout/app-shell';
 import { useTranslation } from 'react-i18next';
 import Link from 'next/link';
 
-export default function PaymentSuccessPage() {
+import { Suspense } from 'react';
+
+function PaymentSuccessContent() {
     const searchParams = useSearchParams();
     const sessionId = searchParams.get('session_id');
-    const { t } = useTranslation('common');
 
     return (
         <AppShell title="Payment Successful" subtitle="Thank you for your payment">
@@ -38,5 +39,13 @@ export default function PaymentSuccessPage() {
                 </Card>
             </div>
         </AppShell>
+    );
+}
+
+export default function PaymentSuccessPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+            <PaymentSuccessContent />
+        </Suspense>
     );
 }
