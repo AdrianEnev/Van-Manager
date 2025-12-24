@@ -19,6 +19,8 @@ import { registerPenaltyRoutes } from './routes/penalties';
 import { registerPlanRoutes } from './routes/plans';
 import { registerMaintenanceRoutes } from './routes/maintenance';
 import { contactRoutes } from './routes/contact';
+import { registerDevRoutes } from './routes/dev';
+import { startSchedulers } from './services/scheduler';
 
 async function bootstrap() {
     const env = await loadApiEnv();
@@ -66,6 +68,10 @@ async function bootstrap() {
     await registerPlanRoutes(app);
     await registerMaintenanceRoutes(app);
     await app.register(contactRoutes);
+    await registerDevRoutes(app);
+
+    // Start schedulers
+    startSchedulers(app);
 
     const port = env.PORT;
     await app.listen({ port, host: '0.0.0.0' });

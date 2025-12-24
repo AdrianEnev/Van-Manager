@@ -84,7 +84,7 @@ export default function AdminUsersPage() {
                   <td className="px-2 py-2"><span className="rounded bg-gray-100 px-2 py-0.5 text-xs uppercase">{u.role}</span></td>
                   <td className="px-2 py-2">{u.isTransactionAllowed ? 'Yes' : 'No'}</td>
                   <td className="px-2 py-2">
-                    <Button variant="outline" size="sm" onClick={() => toggle(u.id, u.isTransactionAllowed)}>Toggle</Button>
+                    <Button variant="outline" size="sm" onClick={() => toggle(u.id, u.isTransactionAllowed)}>{u.isTransactionAllowed ? 'Disable' : 'Enable'}</Button>
                   </td>
                 </tr>
               )) : (

@@ -140,7 +140,8 @@
         "payments": "Payments",
         "penalties": "Penalties",
         "users": "Users",
-        "finance": "Finance"
+        "finance": "Finance",
+        "devTools": "🛠️ Dev Tools"
     },
     "contact": {
         "title": "Contact Support",

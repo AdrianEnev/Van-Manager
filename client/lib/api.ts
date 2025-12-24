@@ -68,6 +68,7 @@ export type AuthUser = {
     email: string;
     name: string;
     role: 'admin' | 'user';
+    isTransactionAllowed?: boolean;
 };
 
 export async function login(email: string, password: string) {
@@ -400,6 +401,10 @@ export async function adminListPlans(filters?: Partial<{ userId: string; vehicle
 
 export async function adminUpdatePlan(id: string, payload: Partial<{ amount: number; currency: string; active: boolean }>): Promise<Plan> {
     return apiFetchAuto<Plan>(`/api/plans/${id}`, { method: 'PATCH', body: JSON.stringify(payload) });
+}
+
+export async function adminDeletePlan(id: string): Promise<{ ok: true }> {
+    return apiFetchAuto<{ ok: true }>(`/api/plans/${id}`, { method: 'DELETE' });
 }
 
 // Contact form submission (no auth required)

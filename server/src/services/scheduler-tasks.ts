@@ -13,12 +13,10 @@ function addInterval(date: Date, frequency: 'weekly' | 'monthly' | 'custom_days'
     if (frequency === 'weekly') {
         d.setDate(d.getDate() + 7);
     } else if (frequency === 'monthly') {
-        // advance by one calendar month, keeping day where possible
         const day = d.getDate();
         d.setMonth(d.getMonth() + 1);
-        // handle edge cases like Jan 31 -> Feb
         if (d.getDate() < day) {
-            d.setDate(0); // go to last day of previous month
+            d.setDate(0);
         }
     } else {
         const inc = Math.max(1, intervalDays || 1);
@@ -27,7 +25,7 @@ function addInterval(date: Date, frequency: 'weekly' | 'monthly' | 'custom_days'
     return d;
 }
 
-async function processOverdueCharges(app: FastifyInstance) {
+export async function processOverdueCharges(app: FastifyInstance) {
     const now = new Date();
     const pending = await Charge.find({ status: 'pending', dueDate: { $lt: now } }).limit(200).lean();
     if (!pending.length) return { processed: 0, notified: 0 };
@@ -35,10 +33,8 @@ async function processOverdueCharges(app: FastifyInstance) {
     let notified = 0;
     for (const c of pending) {
         try {
-            // Mark overdue
             await Charge.updateOne({ _id: c._id, status: 'pending' }, { $set: { status: 'overdue' } });
 
-            // Throttle notifications: do not send another overdue email for the same charge within throttle window
             const env = loadApiEnv();
             const throttleHours = Number(env.NOTIFY_THROTTLE_HOURS ?? 24);
             const since = new Date(Date.now() - msFromHours(throttleHours));
@@ -53,7 +49,7 @@ async function processOverdueCharges(app: FastifyInstance) {
             const amount = (c as any).amount?.toFixed ? (c as any).amount.toFixed(2) : String((c as any).amount);
             const subject = `Overdue payment: £${amount}`;
             const due = c.dueDate ? new Date(c.dueDate).toLocaleDateString() : 'N/A';
-            const text = `Your charge is now overdue.\n\nAmount: £${amount}\nDue date: ${due}\n\nPlease arrange payment as soon as possible.`;
+            const text = `Your charge is now overdue.\\n\\nAmount: £${amount}\\nDue date: ${due}\\n\\nPlease arrange payment as soon as possible.`;
 
             await sendEmailNotification({
                 userId: c.userId as any,
@@ -65,20 +61,21 @@ async function processOverdueCharges(app: FastifyInstance) {
             notified += 1;
         } catch (e) {
             (app.log as any)?.error?.({ err: e, chargeId: String((c as any)._id) }, 'Failed overdue processing');
-            // continue to next
         }
     }
     return { processed: pending.length, notified };
 }
 
-async function tickPlans(app: FastifyInstance) {
+export async function tickPlans(app: FastifyInstance) {
     try {
         const now = new Date();
         const batch = await Plan.find({ active: true, nextDueDate: { $lte: now } }).limit(100).lean();
-        if (!batch.length) return;
+        if (!batch.length) return { processed: 0, created: 0 };
+
+        let created = 0;
         for (const p of batch) {
             try {
-                await (await import('../models/Charge')).Charge.create({
+                await Charge.create({
                     userId: p.userId,
                     vehicleId: p.vehicleId,
                     amount: (p as any).amount,
@@ -91,23 +88,25 @@ async function tickPlans(app: FastifyInstance) {
 
                 const next = addInterval(new Date(p.nextDueDate), (p as any).frequency, (p as any).intervalDays);
                 await Plan.updateOne({ _id: (p as any)._id }, { $set: { nextDueDate: next } });
+                created += 1;
             } catch (e) {
-                // log and continue
+                (app.log as any)?.error?.({ err: e, planId: String((p as any)._id) }, 'Failed to create charge from plan');
             }
         }
+        return { processed: batch.length, created };
     } catch (e) {
-        // log and continue
+        (app.log as any)?.error?.({ err: e }, 'tickPlans failed');
+        return { processed: 0, created: 0 };
     }
 }
 
-async function processDueSoonReminders(app: FastifyInstance) {
+export async function processDueSoonReminders(app: FastifyInstance) {
     const env = loadApiEnv();
     const leadHours = Number(env.NOTIFY_REMINDER_LEAD_HOURS ?? 48);
     const throttleHours = Number(env.NOTIFY_THROTTLE_HOURS ?? 24);
     const now = new Date();
     const until = new Date(Date.now() + msFromHours(leadHours));
 
-    // Find pending charges due between now and the lead window
     const dueSoon = await Charge.find({ status: 'pending', dueDate: { $gte: now, $lte: until } })
         .limit(200)
         .lean();
@@ -116,7 +115,6 @@ async function processDueSoonReminders(app: FastifyInstance) {
     let notified = 0;
     for (const c of dueSoon) {
         try {
-            // Throttle: check if we've sent a reminder recently for this charge
             const since = new Date(Date.now() - msFromHours(throttleHours));
             const dup = await Notification.exists({
                 userId: new mongoose.Types.ObjectId(c.userId as any),
@@ -129,7 +127,7 @@ async function processDueSoonReminders(app: FastifyInstance) {
             const amount = (c as any).amount?.toFixed ? (c as any).amount.toFixed(2) : String((c as any).amount);
             const due = c.dueDate ? new Date(c.dueDate).toLocaleDateString() : 'N/A';
             const subject = `Upcoming payment due: £${amount}`;
-            const text = `You have an upcoming charge due soon.\n\nAmount: £${amount}\nDue date: ${due}\n\nPlease arrange payment by the due date.`;
+            const text = `You have an upcoming charge due soon.\\n\\nAmount: £${amount}\\nDue date: ${due}\\n\\nPlease arrange payment by the due date.`;
 
             await sendEmailNotification({
                 userId: c.userId as any,
@@ -144,54 +142,4 @@ async function processDueSoonReminders(app: FastifyInstance) {
         }
     }
     return { processed: dueSoon.length, notified };
-}
-
-export function startSchedulers(app: FastifyInstance) {
-    const env = loadApiEnv();
-    const enabled = String(env.ENABLE_SCHEDULER ?? 'true') === 'true';
-    if (!enabled) {
-        app.log.info('Schedulers disabled by env');
-        return;
-    }
-
-    const overdueIntervalMs = Number(env.OVERDUE_CRON_INTERVAL_MS ?? 15 * 60 * 1000); // default 15 min
-
-    async function tickOverdue() {
-        try {
-            const { processOverdueCharges } = await import('./scheduler-tasks');
-            const { processed, notified } = await processOverdueCharges(app);
-            app.log.info({ processed, notified }, 'Overdue scheduler run');
-        } catch (e) {
-            app.log.error({ err: e }, 'Overdue scheduler failed');
-        }
-    }
-
-    async function tickReminders() {
-        try {
-            const { processDueSoonReminders } = await import('./scheduler-tasks');
-            const { processed, notified } = await processDueSoonReminders(app);
-            app.log.info({ processed, notified }, 'Reminder scheduler run');
-        } catch (e) {
-            app.log.error({ err: e }, 'Reminder scheduler failed');
-        }
-    }
-
-    async function tickPlansWrapper() {
-        try {
-            const { tickPlans } = await import('./scheduler-tasks');
-            await tickPlans(app);
-        } catch (e) {
-            app.log.error({ err: e }, 'Plans scheduler failed');
-        }
-    }
-
-    // Initial delay to allow server to finish booting, then interval
-    setTimeout(() => {
-        tickOverdue();
-        tickReminders();
-        tickPlansWrapper();
-        setInterval(tickOverdue, overdueIntervalMs).unref();
-        setInterval(tickReminders, overdueIntervalMs).unref();
-        setInterval(tickPlansWrapper, overdueIntervalMs).unref();
-    }, 5_000).unref?.();
 }
