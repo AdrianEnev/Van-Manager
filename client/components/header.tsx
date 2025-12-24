@@ -78,14 +78,16 @@ export default function Header() {
     function DesktopNav() {
         if (!primaryNav.length) return null;
         return (
-            <nav className="ml-6 hidden items-center gap-3 md:flex" aria-label={t('header.primaryNav')}>
+            <nav className="ml-8 hidden items-center gap-6 md:flex" aria-label={t('header.primaryNav')}>
                 {primaryNav.map((item) => (
                     <Link
                         key={item.href}
                         href={item.href}
                         className={clsx(
-                            'text-sm font-medium text-gray-600 transition hover:text-gray-900',
-                            pathname?.startsWith(item.href) && 'text-gray-900'
+                            'text-sm font-medium transition-colors duration-200',
+                            pathname?.startsWith(item.href)
+                                ? 'text-gray-900'
+                                : 'text-gray-500 hover:text-gray-900'
                         )}
                     >
                         {item.label}
@@ -181,41 +183,48 @@ export default function Header() {
         );
     }
 
+    const isAuthPage = ['/login', '/register', '/forgot-password'].includes(pathname || '');
+
     return (
         <>
-            <header className="sticky top-0 z-40 border-b bg-white/80 backdrop-blur">
-                <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-4 lg:px-6">
-                    <div className="flex items-center gap-3">
-                        {!shouldRestrict && (
-                            <button
-                                className="-ml-2 rounded p-2 hover:bg-gray-100 md:hidden"
-                                aria-label={t('actions.openMenu')}
-                                onClick={() => setOpen(true)}
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-                                </svg>
-                            </button>
-                        )}
-                        {user?.role === 'admin' ? (
-                            <div className="text-lg font-semibold">{t('appName')}</div>
-                        ) : (
-                            <Link href="/" className="text-lg font-semibold">
-                                {t('appName')}
-                            </Link>
-                        )}
-                        {!shouldRestrict && <DesktopNav />}
+            <div className="fixed top-4 inset-x-0 z-40 px-4 pointer-events-none">
+                <header className="mx-auto max-w-5xl rounded-full border border-gray-200/50 bg-white/80 shadow-xl backdrop-blur-xl pointer-events-auto transition-all duration-300">
+                    <div className="flex w-full items-center justify-between px-5 py-3 lg:px-6">
+                        <div className="flex items-center gap-4">
+                            {!shouldRestrict && (
+                                <button
+                                    className="rounded p-2 text-gray-500 hover:bg-gray-100/50 hover:text-gray-900 md:hidden"
+                                    aria-label={t('actions.openMenu')}
+                                    onClick={() => setOpen(true)}
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                                    </svg>
+                                </button>
+                            )}
+                            {user?.role === 'admin' ? (
+                                <div className="text-xl font-bold tracking-tight text-gray-900">{t('appName')}</div>
+                            ) : (
+                                <Link href="/" className="text-xl font-bold tracking-tight text-gray-900 transition hover:opacity-80">
+                                    {t('appName')}
+                                </Link>
+                            )}
+                            {!shouldRestrict && <DesktopNav />}
+                        </div>
+                        <div className="flex items-center gap-3">
+                            {!shouldRestrict && (
+                                <div className="hidden sm:block">
+                                    <LanguageSwitcher />
+                                </div>
+                            )}
+                            {renderDesktopAuth()}
+                        </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                        {!shouldRestrict && (
-                            <div className="hidden sm:block">
-                                <LanguageSwitcher />
-                            </div>
-                        )}
-                        {renderDesktopAuth()}
-                    </div>
-                </div>
-            </header>
+                </header>
+            </div>
+            {/* Spacer to prevent content from jumping up behind the fixed header - hidden on auth pages */}
+            {!isAuthPage && <div className="h-24 md:h-28" />}
+
             {!shouldRestrict && <MobileNav />}
         </>
     );

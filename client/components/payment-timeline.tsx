@@ -90,147 +90,172 @@ export function PaymentTimeline({ charges, payments, isTransactionAllowed }: Pay
     const totalUnpaid = unpaidCharges.reduce((sum, c) => sum + c.amount, 0);
 
     return (
-        <div className="grid gap-4 md:grid-cols-2">
-            {/* Left Side: Last Payment / Unpaid Charges */}
-            <Card className={`border-2 ${unpaidCharges.length > 0 ? 'border-red-400 bg-red-50' : 'border-green-300 bg-green-50'}`}>
-                <CardContent className="p-4">
-                    {unpaidCharges.length > 0 ? (
-                        // Unpaid charges
-                        <div className="space-y-3">
-                            {hasMultipleUnpaid ? (
-                                // Multiple unpaid - show all
-                                <>
-                                    <div className="flex items-center justify-between mb-3 pb-3 border-b-2 border-red-300">
-                                        <div>
-                                            <p className="text-xs font-bold text-red-700 uppercase tracking-wide">⚠️ Multiple Unpaid</p>
-                                            <p className="text-2xl font-extrabold text-red-900 mt-1">{formatCurrency(totalUnpaid)}</p>
-                                            <p className="text-sm text-red-800 font-semibold">{unpaidCharges.length} charges</p>
-                                        </div>
-                                    </div>
-                                    <div className="space-y-2 max-h-64 overflow-y-auto">
-                                        {unpaidCharges.map((charge) => {
-                                            const daysOverdue = getDaysOverdue(charge.dueDate);
-                                            return (
-                                                <div key={charge.id} className="bg-white rounded-lg border-2 border-red-300 p-3">
-                                                    <div className="flex items-center justify-between">
-                                                        <div className="flex-1">
-                                                            <p className="font-bold text-red-900">{formatCurrency(charge.amount)}</p>
-                                                            <p className="text-xs text-red-700">
-                                                                {daysOverdue > 0 ? `${daysOverdue} days overdue` : 'Due today'}
-                                                            </p>
-                                                            <p className="text-xs text-gray-600">{formatDate(charge.dueDate)}</p>
-                                                        </div>
-                                                        {isTransactionAllowed && (
-                                                            <PayChargeButton
-                                                                chargeId={charge.id}
-                                                                amount={charge.amount}
-                                                                size="sm"
-                                                                className="bg-red-600 hover:bg-red-700 text-white font-semibold ml-2"
-                                                            >
-                                                                Pay
-                                                            </PayChargeButton>
-                                                        )}
-                                                    </div>
+        <div className="grid gap-6 md:grid-cols-2">
+            {/* Left Side: Unpaid / Last Payment */}
+            <div className={`relative overflow-hidden rounded-2xl border bg-white p-6 shadow-lg transition-all hover:-translate-y-1 hover:shadow-xl ${unpaidCharges.length > 0
+                ? 'border-red-100 shadow-red-200/50'
+                : 'border-emerald-100 shadow-emerald-200/50'
+                }`}>
+                {/* Background accent */}
+                <div className={`absolute -right-12 -top-12 h-32 w-32 rounded-full opacity-10 blur-3xl ${unpaidCharges.length > 0 ? 'bg-red-500' : 'bg-emerald-500'
+                    }`} />
+
+                {unpaidCharges.length > 0 ? (
+                    // Unpaid charges
+                    <div className="relative z-10 space-y-4">
+                        <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 text-xl">⚠️</div>
+                            <div>
+                                <p className="text-xs font-bold uppercase tracking-wider text-red-600">Action Required</p>
+                                <h3 className="text-lg font-bold text-gray-900">Outstanding Balance</h3>
+                            </div>
+                        </div>
+
+                        {hasMultipleUnpaid ? (
+                            <>
+                                <div className="mb-2">
+                                    <p className="text-3xl font-extrabold text-gray-900 tracking-tight">{formatCurrency(totalUnpaid)}</p>
+                                    <p className="text-sm font-medium text-red-600">{unpaidCharges.length} overdue payments</p>
+                                </div>
+                                <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
+                                    {unpaidCharges.map((charge) => {
+                                        const daysOverdue = getDaysOverdue(charge.dueDate);
+                                        return (
+                                            <div key={charge.id} className="flex items-center justify-between rounded-xl border border-red-50 bg-red-50/30 p-3">
+                                                <div>
+                                                    <p className="font-bold text-gray-900">{formatCurrency(charge.amount)}</p>
+                                                    <p className="text-xs font-medium text-red-600">
+                                                        {daysOverdue > 0 ? `${daysOverdue} days overdue` : 'Due today'}
+                                                    </p>
                                                 </div>
-                                            );
-                                        })}
-                                    </div>
-                                </>
-                            ) : (
-                                // Single unpaid charge
-                                <>
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <span className="text-2xl">⚠️</span>
-                                        <p className="text-sm font-bold text-red-700 uppercase tracking-wide">Unpaid Charge</p>
-                                    </div>
-                                    <p className="text-3xl font-extrabold text-red-900">{formatCurrency(unpaidCharges[0].amount)}</p>
-                                    <p className="text-sm text-red-800 font-semibold">
+                                                {isTransactionAllowed && (
+                                                    <PayChargeButton
+                                                        chargeId={charge.id}
+                                                        amount={charge.amount}
+                                                        size="sm"
+                                                        className="bg-red-600 text-xs hover:bg-red-700 text-white shadow-none"
+                                                    >
+                                                        Pay
+                                                    </PayChargeButton>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <div>
+                                    <p className="text-4xl font-extrabold text-gray-900 tracking-tight">{formatCurrency(unpaidCharges[0].amount)}</p>
+                                    <p className="text-sm font-medium text-red-600 mt-1">
                                         {getDaysOverdue(unpaidCharges[0].dueDate) > 0
                                             ? `${getDaysOverdue(unpaidCharges[0].dueDate)} days overdue`
                                             : 'Due today'}
                                     </p>
-                                    <p className="text-sm text-red-700">Due: {formatDate(unpaidCharges[0].dueDate)}</p>
-                                    {isTransactionAllowed && (
-                                        <PayChargeButton
-                                            chargeId={unpaidCharges[0].id}
-                                            amount={unpaidCharges[0].amount}
-                                            className="w-full mt-3 bg-red-600 hover:bg-red-700 text-white font-bold"
-                                        >
-                                            Pay Now
-                                        </PayChargeButton>
-                                    )}
-                                </>
-                            )}
-                        </div>
-                    ) : lastPaidCharge ? (
-                        // Last paid charge
-                        <div>
-                            <div className="flex items-center gap-2 mb-2">
-                                <span className="text-2xl">✓</span>
-                                <p className="text-sm font-bold text-green-700 uppercase tracking-wide">Last Payment</p>
-                            </div>
-                            <p className="text-3xl font-extrabold text-green-900">{formatCurrency(lastPaidCharge.amount)}</p>
-                            <p className="text-sm text-green-800 font-semibold mt-2">Payment Date:</p>
-                            <p className="text-sm text-green-700">{formatDate(lastPaidCharge.dueDate)}</p>
-                        </div>
-                    ) : (
-                        // No charges
-                        <div className="text-center py-6">
-                            <p className="text-gray-500 text-sm">No payment history</p>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
-
-            {/* Right Side: Next Payment */}
-            <Card className={`border-2 ${nextCharge && getDaysUntilDue(nextCharge.dueDate) <= 0 ? 'border-red-400 bg-red-50' : 'border-gray-300 bg-gray-50'}`}>
-                <CardContent className="p-4">
-                    {nextCharge ? (
-                        getDaysUntilDue(nextCharge.dueDate) <= 0 ? (
-                            // Due today or overdue
-                            <div>
-                                <div className="flex items-center gap-2 mb-2">
-                                    <span className="text-2xl">⚠️</span>
-                                    <p className="text-sm font-bold text-red-700 uppercase tracking-wide">Payment Due Today!</p>
                                 </div>
-                                <p className="text-3xl font-extrabold text-red-900">{formatCurrency(nextCharge.amount)}</p>
-                                <p className="text-sm text-red-800 font-semibold">Due: {formatDate(nextCharge.dueDate)}</p>
+                                <div className="rounded-xl bg-red-50 p-3 text-sm text-red-800">
+                                    Due Date: <span className="font-semibold">{formatDate(unpaidCharges[0].dueDate)}</span>
+                                </div>
                                 {isTransactionAllowed && (
                                     <PayChargeButton
-                                        chargeId={nextCharge.id}
-                                        amount={nextCharge.amount}
-                                        className="w-full mt-3 bg-red-600 hover:bg-red-700 text-white font-bold"
+                                        chargeId={unpaidCharges[0].id}
+                                        amount={unpaidCharges[0].amount}
+                                        className="w-full mt-4 bg-gradient-to-r from-red-600 to-red-500 py-6 text-lg font-bold text-white shadow-lg shadow-red-500/30 hover:shadow-red-500/50 hover:to-red-600 transition-all rounded-xl"
                                     >
-                                        Pay Now
+                                        Pay Now 💳
                                     </PayChargeButton>
                                 )}
+                            </>
+                        )}
+                    </div>
+                ) : lastPaidCharge ? (
+                    // Last paid charge
+                    <div className="relative z-10 space-y-4">
+                        <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 text-xl">✓</div>
+                            <div>
+                                <p className="text-xs font-bold uppercase tracking-wider text-emerald-600">Status</p>
+                                <h3 className="text-lg font-bold text-gray-900">All Caught Up</h3>
+                            </div>
+                        </div>
+                        <div>
+                            <p className="text-sm text-gray-500">Last payment made</p>
+                            <p className="text-3xl font-extrabold text-gray-900 tracking-tight">{formatCurrency(lastPaidCharge.amount)}</p>
+                            <p className="text-sm font-medium text-emerald-600 mt-1">on {formatDate(lastPaidCharge.dueDate)}</p>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="flex h-full flex-col items-center justify-center py-6 text-center">
+                        <div className="mb-3 rounded-full bg-gray-100 p-3 text-2xl">👋</div>
+                        <p className="font-medium text-gray-900">Welcome!</p>
+                        <p className="text-sm text-gray-500">No payment history yet.</p>
+                    </div>
+                )}
+            </div>
+
+            {/* Right Side: Next Payment */}
+            <div className={`relative overflow-hidden rounded-2xl border bg-white p-6 shadow-lg transition-all hover:-translate-y-1 hover:shadow-xl ${nextCharge && getDaysUntilDue(nextCharge.dueDate) <= 0
+                ? 'border-red-100 shadow-red-200/50'
+                : 'border-indigo-100 shadow-indigo-200/50'
+                }`}>
+                {/* Background accent */}
+                <div className="absolute -right-12 -top-12 h-32 w-32 rounded-full bg-indigo-500/10 blur-3xl" />
+
+                <div className="relative z-10 h-full">
+                    {nextCharge ? (
+                        getDaysUntilDue(nextCharge.dueDate) <= 0 ? (
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 text-xl">⚠️</div>
+                                    <div>
+                                        <p className="text-xs font-bold uppercase tracking-wider text-red-600">Due Today</p>
+                                        <h3 className="text-lg font-bold text-gray-900">Payment Required</h3>
+                                    </div>
+                                </div>
+                                <div>
+                                    <p className="text-4xl font-extrabold text-gray-900 tracking-tight">{formatCurrency(nextCharge.amount)}</p>
+                                    <p className="text-sm text-red-600 font-medium">Please pay by end of day</p>
+                                    {isTransactionAllowed && (
+                                        <PayChargeButton
+                                            chargeId={nextCharge.id}
+                                            amount={nextCharge.amount}
+                                            className="w-full mt-4 bg-gradient-to-r from-red-600 to-red-500 py-6 text-lg font-bold text-white shadow-lg shadow-red-500/30 hover:shadow-red-500/50 hover:to-red-600 transition-all rounded-xl"
+                                        >
+                                            Pay Now 💳
+                                        </PayChargeButton>
+                                    )}
+                                </div>
                             </div>
                         ) : (
-                            // Future payment
-                            <div>
-                                <div className="flex items-center gap-2 mb-2">
-                                    <span className="text-2xl">📅</span>
-                                    <p className="text-sm font-bold text-gray-700 uppercase tracking-wide">Next Payment</p>
+                            <div className="flex h-full flex-col justify-between space-y-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 text-xl">📅</div>
+                                    <div>
+                                        <p className="text-xs font-bold uppercase tracking-wider text-indigo-600">Upcoming</p>
+                                        <h3 className="text-lg font-bold text-gray-900">Next Payment</h3>
+                                    </div>
                                 </div>
-                                <p className="text-3xl font-extrabold text-gray-900">{formatCurrency(nextCharge.amount)}</p>
-                                <p className="text-sm text-gray-800 font-semibold mt-2">
-                                    {getDaysUntilDue(nextCharge.dueDate)} day{getDaysUntilDue(nextCharge.dueDate) !== 1 ? 's' : ''}:
-                                </p>
-                                <p className="text-sm text-gray-700">{formatDate(nextCharge.dueDate)}</p>
+
+                                <div>
+                                    <p className="text-4xl font-extrabold text-gray-900 tracking-tight">{formatCurrency(nextCharge.amount)}</p>
+                                    <div className="mt-2 flex items-center gap-2">
+                                        <span className="rounded-md bg-indigo-50 px-2 py-1 text-xs font-bold text-indigo-700">
+                                            {getDaysUntilDue(nextCharge.dueDate)} days left
+                                        </span>
+                                        <span className="text-sm text-gray-500">Due {formatDate(nextCharge.dueDate)}</span>
+                                    </div>
+                                </div>
                             </div>
                         )
                     ) : (
-                        // Placeholder when no next charge found
-                        <div>
-                            <div className="flex items-center gap-2 mb-2">
-                                <span className="text-2xl">📅</span>
-                                <p className="text-sm font-bold text-gray-500 uppercase tracking-wide">Next Payment</p>
-                            </div>
-                            <p className="text-lg text-gray-500 italic">No upcoming charges scheduled</p>
+                        <div className="flex h-full flex-col items-center justify-center py-6 text-center">
+                            <div className="mb-3 rounded-full bg-gray-50 p-3 text-2xl">📅</div>
+                            <p className="font-medium text-gray-900">No upcoming charges</p>
+                            <p className="text-sm text-gray-500">You're all clear for now.</p>
                         </div>
                     )}
-                </CardContent>
-            </Card>
+                </div>
+            </div>
         </div>
     );
 }

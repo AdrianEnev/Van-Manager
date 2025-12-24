@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import clsx from 'clsx';
 import { useAuth } from '../../components/auth-provider';
 import { getMyVehicles, getMyCharges, getMyPayments, getMyPenalties, type VehicleAssignment, type Charge, type Payment, type Penalty } from '../../lib/api';
 import { Button } from 'components/ui/button';
@@ -133,7 +134,7 @@ export default function DashboardPage() {
             )}
             heroSlot={
                 <div className="flex flex-wrap gap-2">
-                    <Link href="/contact">
+                    <Link href={"/contact" as any}>
                         <Button size="sm" variant="secondary">
                             {t('actions.contactSupport')}
                         </Button>
@@ -141,150 +142,94 @@ export default function DashboardPage() {
                 </div>
             }
         >
-            {error && <div className="text-sm text-red-600">{error}</div>}
+            {/* Dashboard Content */}
+            <div className="space-y-8">
 
-            {/* Payment Timeline */}
-            {charges && payments && (
-                <Section>
-                    <SectionTitle>Payment Status</SectionTitle>
-                    <PaymentTimeline
-                        charges={charges}
-                        payments={payments}
-                        isTransactionAllowed={user?.isTransactionAllowed}
-                    />
-                </Section>
-            )}
+                {/* Row 1: Payment Status Section (Full Width) */}
+                {charges && payments && (
+                    <Section>
+                        <SectionTitle className="mb-4 flex items-center gap-2 text-xl font-bold text-gray-900">
+                            <span>💳</span> Payment Status
+                        </SectionTitle>
+                        <PaymentTimeline
+                            charges={charges}
+                            payments={payments}
+                            isTransactionAllowed={user?.isTransactionAllowed ?? true}
+                        />
+                    </Section>
+                )}
 
-            {/* Overdue Payment Alert Banner */}
-            {overdueCharges.length > 0 && (
-                <NotificationBanner
-                    variant="error"
-                    title={`⚠️ ${overdueCharges.length} Overdue Payment${overdueCharges.length > 1 ? 's' : ''}`}
-                    message={`You have ${currency(overdueCharges.reduce((sum, c) => sum + c.amount, 0))} in overdue charges. Please make payment as soon as possible to avoid additional fees.`}
-                    actionLabel="Pay Now"
-                    onAction={() => {
-                        const firstOverdue = overdueCharges[0];
-                        if (firstOverdue?.id) {
-                            document.getElementById(`charge-${firstOverdue.id}`)?.scrollIntoView({ behavior: 'smooth' });
-                        }
-                    }}
-                />
-            )}
-
-            <Section>
+                {/* Row 2: Vehicles & Penalties (Side by Side) */}
                 <div className="grid gap-6 lg:grid-cols-2">
-                    {/* Vehicles */}
-                    <div>
-                        <h3 className="text-lg font-semibold mb-3">{t('dashboard.vehicles')}</h3>
-                        <div className="grid gap-3">
+                    {/* Vehicles Column */}
+                    <Section className="h-full">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                                <span>🚛</span> {t('dashboard.vehicles')}
+                            </h3>
+                            {vehicles && <Badge tone="gray" className="rounded-full px-3">{vehicles.length}</Badge>}
+                        </div>
+                        <div className="space-y-4">
                             {vehicles?.length ? (
                                 vehicles.map((a) => (
-                                    <Card key={a.assignmentId} className="border-2 border-transparent transition hover:border-gray-200">
-                                        <CardHeader>
-                                            <CardTitle className="text-lg">{a.vehicle.plateNumber}</CardTitle>
-                                            <p className="text-sm text-gray-500">{a.vehicle.makeModel || t('vehiclesPage.notes')}</p>
-                                        </CardHeader>
-                                        <CardContent className="space-y-1 text-sm text-gray-600">
-                                            <p>{t('vehiclesPage.assignment')}: {formatDate(a.assignedAt)}</p>
-                                            {a.vehicle.motExpiry && <p>{t('vehiclesPage.mot')}: {formatDate(a.vehicle.motExpiry)}</p>}
-                                            {a.vehicle.notes && <p>{t('vehiclesPage.notes')}: {a.vehicle.notes}</p>}
-                                        </CardContent>
-                                    </Card>
+                                    <div key={a.assignmentId} className="group relative overflow-hidden rounded-2xl border border-gray-100 bg-white p-5 shadow-md shadow-gray-200/50 transition-all hover:-translate-y-1 hover:shadow-xl">
+                                        <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+                                            <svg className="w-24 h-24" fill="currentColor" viewBox="0 0 24 24"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.22.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z" /></svg>
+                                        </div>
+                                        <h4 className="text-2xl font-bold text-gray-900">{a.vehicle.plateNumber}</h4>
+                                        <p className="font-medium text-gray-500 mb-4">{a.vehicle.makeModel || t('vehiclesPage.notes')}</p>
+
+                                        <div className="space-y-2 text-sm text-gray-600 relative z-10">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-gray-400">📅</span>
+                                                <span>Assigned: <span className="font-semibold text-gray-900">{formatDate(a.assignedAt)}</span></span>
+                                            </div>
+                                            {a.vehicle.motExpiry && (
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-gray-400">🔧</span>
+                                                    <span>MOT: <span className={clsx("font-semibold", new Date(a.vehicle.motExpiry) < new Date() ? "text-red-600" : "text-gray-900")}>{formatDate(a.vehicle.motExpiry)}</span></span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
                                 ))
                             ) : (
                                 <EmptyState title={t('dashboard.noVehicles')} description={t('vehiclesPage.assigned')} />
                             )}
                         </div>
-                    </div>
+                    </Section>
 
-                    {/* Penalties */}
-                    <div>
-                        <h3 className="text-lg font-semibold mb-3">{t('dashboard.penalties')}</h3>
-                        <div className="grid gap-3">
+                    {/* Penalties Column */}
+                    <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-md shadow-gray-200/50 h-full">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                                <span>⚖️</span> {t('dashboard.penalties')}
+                            </h3>
+                            {penalties && penalties.length > 0 && <Badge tone="gray" className="rounded-full px-3">{penalties.length}</Badge>}
+                        </div>
+                        <div className="space-y-3">
                             {penalties?.length ? (
                                 penalties.map((pe) => (
-                                    <Card key={pe.id}>
-                                        <CardContent className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                                            <div>
-                                                <div className="font-medium">{currency(pe.amount)} — {pe.reason}</div>
-                                                {pe.dueDate && <div className="text-sm text-gray-600">{t('labels.due')} {formatDate(pe.dueDate)}</div>}
-                                            </div>
+                                    <div key={pe.id} className="group relative rounded-xl border border-gray-100 bg-gray-50/50 p-4 transition hover:bg-white hover:shadow-md">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <span className="text-xl font-bold text-gray-900">{currency(pe.amount)}</span>
                                             <Badge tone={pe.status === 'paid' ? 'green' : pe.status === 'waived' ? 'blue' : 'yellow'}>{pe.status}</Badge>
-                                        </CardContent>
-                                    </Card>
+                                        </div>
+                                        <p className="font-medium text-gray-700">{pe.reason}</p>
+                                        {pe.dueDate && <p className="text-xs text-gray-400 mt-2">Due {formatDate(pe.dueDate)}</p>}
+                                    </div>
                                 ))
                             ) : (
-                                <EmptyState title={t('dashboard.noPenalties')} description={t('penaltiesPage.active')} />
+                                <div className="flex flex-col items-center justify-center py-12 text-center">
+                                    <p className="text-5xl mb-4">🎉</p>
+                                    <p className="text-lg font-bold text-gray-900">{t('dashboard.noPenalties')}</p>
+                                    <p className="text-sm text-gray-500">You're doing great!</p>
+                                </div>
                             )}
                         </div>
                     </div>
                 </div>
-            </Section>
-
-            {/* Action Required Section - Overdue Charges */}
-            {/*
-                {overdueCharges.length > 0 && (
-                    <Section>
-                        <SectionTitle className="text-red-700">🚨 Action Required - Overdue Payments</SectionTitle>
-                        <div className="space-y-3">
-                            {overdueCharges.map((charge) => {
-                                const daysOverdue = getDaysOverdue(charge.dueDate);
-                                return (
-                                    <Card
-                                        key={charge.id}
-                                        id={`charge-${charge.id}`}
-                                        className="border-2 border-red-300 bg-red-50"
-                                    >
-                                        <CardContent className="py-4">
-                                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                                                <div className="flex-1">
-                                                    <div className="flex items-center gap-2 mb-1">
-                                                        <h3 className="text-xl font-bold text-red-900">{currency(charge.amount)}</h3>
-                                                        <Badge tone="red" size="lg" variant="bold">OVERDUE</Badge>
-                                                    </div>
-                                                    <p className="text-sm text-red-800 font-medium">
-                                                        {charge.type.replace('_', ' ').toUpperCase()}
-                                                    </p>
-                                                    <p className="text-sm text-red-700 mt-1">
-                                                        Due: {formatDate(charge.dueDate)} • <span className="font-semibold">{daysOverdue} day{daysOverdue !== 1 ? 's' : ''} overdue</span>
-                                                    </p>
-                                                </div>
-                                                {user?.isTransactionAllowed && (
-                                                    <div className="shrink-0">
-                                                        <PayChargeButton
-                                                            chargeId={charge.id}
-                                                            amount={charge.amount}
-                                                            className="bg-red-600 hover:bg-red-700 text-white font-semibold"
-                                                        >
-                                                            Pay {currency(charge.amount)}
-                                                        </PayChargeButton>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                );
-                            })}
-                        </div>
-                    </Section>
-                )}
-            */}
-
-            {motTasks.length > 0 && (
-                <Section>
-                    <SectionTitle>Vehicle Alerts</SectionTitle>
-                    <Card>
-                        <CardContent className="space-y-4 py-5">
-                            {motTasks.map((task, idx) => (
-                                <div key={`${task.title}-${idx}`} className="rounded-2xl border bg-amber-50 border-amber-200 px-3 py-3">
-                                    <p className="text-sm font-semibold text-amber-900">{task.title}</p>
-                                    <p className="text-xs text-amber-700">{task.detail}</p>
-                                </div>
-                            ))}
-                        </CardContent>
-                    </Card>
-                </Section>
-            )}
+            </div>
         </AppShell >
     );
 }

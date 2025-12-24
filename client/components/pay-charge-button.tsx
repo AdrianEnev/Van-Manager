@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button, ButtonProps } from 'components/ui/button';
 import { initiatePayment as apiInitiatePayment } from '../lib/api';
-import { redirectToCheckout as stripeRedirect } from '../lib/stripe';
+
 
 interface PayChargeButtonProps extends ButtonProps {
     chargeId: string;
@@ -20,8 +20,12 @@ export function PayChargeButton({ chargeId, amount, className, children, ...prop
 
         setLoading(true);
         try {
-            const { sessionId } = await apiInitiatePayment(chargeId);
-            await stripeRedirect(sessionId);
+            const { url } = await apiInitiatePayment(chargeId);
+            if (url) {
+                window.location.href = url;
+            } else {
+                throw new Error('No checkout URL returned');
+            }
         } catch (err: any) {
             console.error(err);
             alert(err.message || 'Payment initiation failed');
