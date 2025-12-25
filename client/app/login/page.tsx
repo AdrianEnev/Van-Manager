@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '../../components/ui/button';
 import { useAuth } from '../../components/auth-provider';
-import { loginWithGoogle } from '../../lib/api';
+import { loginWithGoogle, tokens } from '../../lib/api';
 import { useTranslation } from 'react-i18next';
 
 declare global {
@@ -15,7 +15,7 @@ declare global {
 
 export default function LoginPage() {
     const router = useRouter();
-    const { authed, login, authenticateFromCookie } = useAuth();
+    const { authed, login, authenticateFromCookie, refresh } = useAuth();
     const { t } = useTranslation('common');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -66,8 +66,14 @@ export default function LoginPage() {
                 callback: async (response: any) => {
                     try {
                         setGLoading(true);
-                        await loginWithGoogle(response.credential);
-                        await authenticateFromCookie();
+                        const data = await loginWithGoogle(response.credential);
+                        // Set tokens for header-based auth (fixes mobile login)
+                        tokens.access = data.tokens.accessToken;
+                        tokens.refresh = data.tokens.refreshToken;
+
+                        tokens.refresh = data.tokens.refreshToken;
+
+                        await refresh(); // Use refresh() to validate via headers (works on mobile) instead of cookie
                         router.push('/');
                     } catch (e: any) {
                         setError(e.message || 'Google login failed');

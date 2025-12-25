@@ -100,7 +100,7 @@ export async function me(): Promise<AuthUser> {
 }
 
 // Cookie session endpoints
-export async function loginWithGoogle(idToken: string): Promise<{ message: string; isNewUser: boolean }> {
+export async function loginWithGoogle(idToken: string): Promise<{ message: string; isNewUser: boolean; tokens: { accessToken: string; refreshToken: string }; user: AuthUser }> {
     return apiFetchCookie('/api/users/login/google', { method: 'POST', body: JSON.stringify({ idToken }) });
 }
 
